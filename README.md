@@ -1,2 +1,2 @@
-# price-check
+# BreadBasket
 CEN3031 Group project
