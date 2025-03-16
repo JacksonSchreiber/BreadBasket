@@ -15,7 +15,7 @@ function Home() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ zipCode, item: 'eggs' }),
+      body: JSON.stringify({ zipCode, item: 'milk' }),
     });
 
     const data = await response.json();
