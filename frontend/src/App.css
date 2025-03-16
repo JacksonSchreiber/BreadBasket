@@ -3,7 +3,7 @@
 .App {
   font-family: 'Roboto', sans-serif;
   text-align: center;
-  background-color: #f4f7faf8; /* main background */
+  background-color: #f4f7fa;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -11,7 +11,7 @@
 }
 
 .App-header {
-  background-color: #3484b9; /* top background */
+  background-color: #3498db;
   padding: 20px;
   width: 100%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -19,7 +19,7 @@
 
 .App-header h1 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.856);;/* App header */
+  color: white;
 }
 
 nav ul {
@@ -35,7 +35,7 @@ nav ul li {
 }
 
 nav ul li a {
-  color: rgba(255, 255, 255, 0.856);; /* nav headers */
+  color: white;
   text-decoration: none;
   font-weight: bold;
   transition: color 0.3s;
@@ -49,7 +49,7 @@ main {
   width: 80%;
   max-width: 800px;
   margin: 20px auto;
-  background-color: rgba(255, 255, 255, 0.966); /*Find Affordable Groceries background */
+  background-color: white;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -70,19 +70,21 @@ label {
   font-weight: bold;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"] {
   padding: 10px;
   width: 250px;
   border: 1px solid #bdc3c7;
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   font-size: 16px;
 }
 
 button {
   padding: 10px 20px;
-  background-color: #cfcc09; /* search botton */
-  color: rgba(255, 255, 255, 0.856);
+  background-color: #2ecc71;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -94,6 +96,36 @@ button:hover {
   background-color: #27ae60;
 }
 
+/* New styles for Login page */
+.login-section {
+  padding: 20px;
+}
+
+.form-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.form-box {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 45%;
+  transition: transform 0.3s;
+}
+
+.form-box:hover {
+  transform: translateY(-5px); /* Slight lift on hover */
+}
+
+.form-box h3 {
+  color: #3498db;
+  margin-bottom: 20px;
+}
+
+/* Responsive Design */
 @media (max-width: 600px) {
   nav ul {
     flex-direction: column;
@@ -107,7 +139,19 @@ button:hover {
     width: 90%;
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
     width: 100%;
+  }
+
+  .form-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .form-box {
+    width: 100%;
+    max-width: 300px;
   }
 }
