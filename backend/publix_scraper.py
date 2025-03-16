@@ -23,15 +23,21 @@ def scrape_publix(zip_code, item="milk"):
 
         # Search for item
         page.goto(f"https://www.publix.com/search")
-        page.fill('input[placeholder="Search products, savings, or recipes"]', item)
+        page.locator('span.button__label:has-text("Delivery & curbside")').first.click()
+        page.locator('span.button__label:has-text("Proceed to Instacart")').first.click()
+        page.locator('span.e-e2f3my:has-text("Confirm")').click()
+        page.fill('input[id="search-bar-input"]', item)
         page.keyboard.press("Enter")
-
-        page.wait_for_selector('card-list', timeout = 5000)
-        page.locator('img').first.click()
+        page.locator('div.e-zjik7:has-text("Sort")').click()
+        page.locator('div.e-l36v6l:has-text("Price: lowest first")').click()
+        time.sleep(0.5)
+        page.locator("div.e-5p3lvt > div.e-1jj9900 > button.e-1nqp5xs > span").click()
 
         # Extract product data
-        #items = page.locator(".product-card").all()
-        #results = []
+        price = page.locator("div.e-2feaft").first.text_content().split('$')[1]
+        print(price)
+        results = []
+        results.append({"title": item, "price": price})
 
         #for item in items:
         #    try:
@@ -40,10 +46,11 @@ def scrape_publix(zip_code, item="milk"):
         #        results.append({"title": title, "price": price})
         #    except:
         #        continue
+        
         input("Press Enter to close the browser...")
 
         browser.close()
-        #return results
+        return results
 
 @app.route('/api/publix', methods=['POST'])
 def get_publix_prices():
