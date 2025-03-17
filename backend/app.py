@@ -13,7 +13,8 @@ db.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
-        password TEXT
+        password TEXT,
+        email TEXT UNIQUE
     )
 ''')
 db.commit()
@@ -25,16 +26,17 @@ def register_user():
     data = request.json
     username = data.get('username')
     password = data.get('password')
+    email = data.get('email')
 
-    if not username or not password:
-        return jsonify({'message': 'Username and password are required'}), 400
+    if not username or not password or not email:
+        return jsonify({'message': 'Username, password, and email are required'}), 400
 
     # Hash the password
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
     try:
-        db.execute('INSERT INTO users (username, password) VALUES (?, ?)',
-                   (username, hashed_password))
+        db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+                   (username, hashed_password, email))
         db.commit()
         return jsonify({'message': 'User registered successfully'}), 201
     except sqlite3.IntegrityError:
@@ -46,26 +48,25 @@ def register_user():
 @app.route('/login', methods=['POST'])
 def login_user():
     data = request.json
-    username = data.get('username')
-    password = data.get('password')
 
-    if not username or not password:
-        return jsonify({'message': 'Username and password are required'}), 400
+    # The front end sends the email as "username"
+    login_email = data.get('username')   
+    login_password = data.get('password')
 
-    # Get the user record
-    cursor = db.execute('SELECT * FROM users WHERE username = ?', (username,))
+    if not login_email or not login_password:
+        return jsonify({'message': 'Email and password are required'}), 400
+
+    # Look up the user by the email column
+    cursor = db.execute('SELECT * FROM users WHERE email = ?', (login_email,))
     row = cursor.fetchone()
 
     if row is None:
         return jsonify({'message': 'Invalid credentials'}), 400
 
-    # row = (id, username, password)
-    stored_hashed_password = row[2]
+    # row = (id, username, password, email)
+    stored_hashed_password = row[2]  
 
-    # Compare hashed password
-    if check_password_hash(stored_hashed_password, password):
-        # Return success message. 
-        # May add returning a JWT or session token in the future...
+    if check_password_hash(stored_hashed_password, login_password):
         return jsonify({'message': 'Login successful'}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 400
