@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
 
-function Login() {
+function Login(props) { // Accept props to access onLoginSuccess
   // State for Login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -12,7 +12,7 @@ function Login() {
   const [regPassword, setRegPassword] = useState('');
 
   // Track a message to display on-screen for login results
-  const [loginMessage, setLoginMessage] = useState('');
+  const [loginMessage, setLoginMessage] = useState(''); 
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +31,12 @@ function Login() {
       const data = await response.json();
       if (response.ok) {
         console.log('Login success:', data.message);
-        setLoginMessage(data.message); 
+        setLoginMessage(data.message);
+
+        //  Call onLoginSuccess with the user's email
+        if (props.onLoginSuccess) {     
+          props.onLoginSuccess(loginEmail); 
+        }
       } else {
         console.log('Login error:', data.message);
         setLoginMessage(data.message); 
@@ -52,7 +57,7 @@ function Login() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // The Flask code expects "username", "password", and now "email"
+          // The Flask code expects "username", "password", and "email"
           username: regUsername,
           password: regPassword,
           email: regEmail
@@ -73,7 +78,7 @@ function Login() {
     <section className="login-section">
       <h2>Login or Register</h2>
 
-      {/* CHANGED: Show loginMessage if present */}
+      {/* Show loginMessage if present */}
       {loginMessage && <p style={{ color: 'red' }}>{loginMessage}</p>} {/* CHANGED */}
 
       <div className="form-container">
