@@ -47,7 +47,7 @@ def scrape_publix(zip_code, item="milk"):
         #    except:
         #        continue
         
-        input("Press Enter to close the browser...")
+        #input("Press Enter to close the browser...")
 
         browser.close()
         return results
