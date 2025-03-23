@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 function About() {
-  const primaryColor = '#3498db'; 
+  const primaryColor = '#3198db'; 
   const textColor = '#2c3e50'; 
   const secondaryTextColor = '#7f8c8d'; 
   const sectionBackground = 'white'; 
