@@ -3,7 +3,20 @@
 .App {
   font-family: 'Roboto', sans-serif;
   text-align: center;
-  background-color: #d7e7dc;
+  /* main background */
+  background-image: radial-gradient(
+      at 27% 37%,
+      rgb(118, 228, 127) 0px, 
+      transparent 0%
+    ), 
+    radial-gradient(at 97% 21%, rgb(209, 223, 215) 0px, transparent 40%),
+    radial-gradient(at 52% 99%, rgb(222, 228, 206) 0px, transparent 40%),
+    radial-gradient(at 10% 29%, rgb(206, 224, 220) 0px, transparent 40%), 
+    radial-gradient(at 97% 96%, rgb(222, 230, 214) 0px, transparent 40%), 
+    radial-gradient(at 33% 50%, rgb(214, 230, 222) 0px, transparent 40%),
+    radial-gradient(at 79% 53%, rgb(207, 224, 207) 0px, transparent 40%); 
+  background-size: cover;
+  background-position: center;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -30,7 +43,7 @@
   margin: 0;
   color: #168030;
 }
-
+/* nav manu */
 nav ul {
   list-style-type: none;
   padding: 0;
