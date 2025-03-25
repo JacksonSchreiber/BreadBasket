@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
+import { GoogleLogin } from '@react-oauth/google';
 
-function Login(props) { // Accept props to access onLoginSuccess
-  // State for Login form
+function Login(props) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-
-  // State for Registration form
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-
-  // Track a message to display on-screen for login results
-  const [loginMessage, setLoginMessage] = useState(''); 
+  const [loginMessage, setLoginMessage] = useState('');
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +19,6 @@ function Login(props) { // Accept props to access onLoginSuccess
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // The Flask code expects "username" and "password"
           username: loginEmail,
           password: loginPassword
         })
@@ -33,17 +28,16 @@ function Login(props) { // Accept props to access onLoginSuccess
         console.log('Login success:', data.message);
         setLoginMessage(data.message);
 
-        //  Call onLoginSuccess with the user's email
-        if (props.onLoginSuccess) {     
-          props.onLoginSuccess(loginEmail); 
+        if (props.onLoginSuccess) {
+          props.onLoginSuccess(loginEmail);
         }
       } else {
         console.log('Login error:', data.message);
-        setLoginMessage(data.message); 
+        setLoginMessage(data.message);
       }
     } catch (error) {
       console.error('Error logging in:', error);
-      setLoginMessage('Error logging in. Please try again.'); 
+      setLoginMessage('Error logging in. Please try again.');
     }
   };
 
@@ -51,13 +45,11 @@ function Login(props) { // Accept props to access onLoginSuccess
     e.preventDefault();
     console.log('Registration submitted:', { regUsername, regEmail, regPassword });
 
-    // Send registration request to Flask
     try {
       const response = await fetch('http://localhost:5000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // The Flask code expects "username", "password", and "email"
           username: regUsername,
           password: regPassword,
           email: regEmail
@@ -74,12 +66,33 @@ function Login(props) { // Accept props to access onLoginSuccess
     }
   };
 
+  const handleGoogleLogin = (credentialResponse) => {
+    console.log("✅ Google login success:", credentialResponse);
+
+    // If you later want to send this token to your backend:
+    // fetch('http://localhost:5000/google-login', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ token: credentialResponse.credential })
+    // });
+
+    if (props.onLoginSuccess) {
+      props.onLoginSuccess("Google User");
+    }
+
+    setLoginMessage("Google login successful!");
+  };
+
+  const handleGoogleError = () => {
+    console.log("❌ Google login failed");
+    setLoginMessage("Google login failed. Please try again.");
+  };
+
   return (
     <section className="login-section">
       <h2>Login or Register</h2>
 
-      {/* Show loginMessage if present */}
-      {loginMessage && <p style={{ color: 'red' }}>{loginMessage}</p>} {/* CHANGED */}
+      {loginMessage && <p style={{ color: 'red' }}>{loginMessage}</p>}
 
       <div className="form-container">
         {/* Login Form */}
@@ -106,6 +119,14 @@ function Login(props) { // Accept props to access onLoginSuccess
             />
             <button type="submit">Login</button>
           </form>
+
+          <div style={{ marginTop: '20px' }}>
+            <p>Or login with Google:</p>
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={handleGoogleError}
+            />
+          </div>
         </div>
 
         {/* Registration Form */}
@@ -148,3 +169,5 @@ function Login(props) { // Accept props to access onLoginSuccess
 }
 
 export default Login;
+
+
