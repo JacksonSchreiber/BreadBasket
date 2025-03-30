@@ -15,7 +15,7 @@ function Home() {
     const fetchedPrices = [];
 
     for (const item of items) {
-      const response = await fetch('http://127.0.0.1:5000/api/publix', {
+      const response = await fetch('http://127.0.0.1:5000/api/kroger', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ function Home() {
       });
 
       const data = await response.json();
-      fetchedPrices.push({ item, price: data.publix_prices[0].price });
+      fetchedPrices.push({ item, price: data.kroger_prices.price });
     }
 
     setPrices(fetchedPrices);
