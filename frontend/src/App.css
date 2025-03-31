@@ -14,7 +14,7 @@
     radial-gradient(at 10% 29%, rgb(206, 224, 220) 0px, transparent 40%), 
     radial-gradient(at 97% 96%, rgb(222, 230, 214) 0px, transparent 40%), 
     radial-gradient(at 33% 50%, rgb(214, 230, 222) 0px, transparent 40%),
-    radial-gradient(at 79% 53%, rgb(207, 224, 207) 0px, transparent 40%); 
+    radial-gradient(at 79% 53%, rgb(207, 224, 207) 0px, transparent 50%); 
   background-size: cover;
   background-position: center;
   min-height: 100vh;
@@ -60,11 +60,14 @@ nav ul li a {
   color: #168030;
   text-decoration: none;
   font-weight: bold;
-  transition: color 0.3s;
+  transition: color 0.3s, transform 0.3s; 
+  display: inline-block; 
 }
 
 nav ul li a:hover {
   color: #ecf0f1;
+  transform: scale(1.1);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 main {
