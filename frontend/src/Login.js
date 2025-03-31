@@ -9,13 +9,14 @@ function Login(props) {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
+  const [registerMessage, setRegisterMessage] = useState('');
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     console.log('Login submitted:', { loginEmail, loginPassword });
 
     try {
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch('http://127.0.0.1:5000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -26,10 +27,14 @@ function Login(props) {
       const data = await response.json();
       if (response.ok) {
         console.log('Login success:', data.message);
-        setLoginMessage(data.message);
+        setLoginMessage('Login successful!');
+        // Store the token and role
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', loginEmail);
+        localStorage.setItem('role', data.role);
 
         if (props.onLoginSuccess) {
-          props.onLoginSuccess(loginEmail);
+          props.onLoginSuccess(loginEmail, data.role);
         }
       } else {
         console.log('Login error:', data.message);
@@ -44,9 +49,10 @@ function Login(props) {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     console.log('Registration submitted:', { regUsername, regEmail, regPassword });
+    setRegisterMessage('Registering...');
 
     try {
-      const response = await fetch('http://localhost:5000/register', {
+      const response = await fetch('http://127.0.0.1:5000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,11 +64,18 @@ function Login(props) {
       const data = await response.json();
       if (response.ok) {
         console.log('Registration success:', data.message);
+        setRegisterMessage('Registration successful! You can now login.');
+        // Clear the registration form
+        setRegUsername('');
+        setRegEmail('');
+        setRegPassword('');
       } else {
         console.log('Registration failed:', data.message);
+        setRegisterMessage(data.message || 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error('Registration error:', error);
+      setRegisterMessage('Error connecting to server. Please try again.');
     }
   };
 
@@ -132,6 +145,7 @@ function Login(props) {
         {/* Registration Form */}
         <div className="form-box">
           <h3>Register</h3>
+          {registerMessage && <p style={{ color: registerMessage.includes('successful') ? 'green' : 'red' }}>{registerMessage}</p>}
           <form onSubmit={handleRegisterSubmit}>
             <label htmlFor="regUsername">Username:</label>
             <input
