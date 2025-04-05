@@ -1,34 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Import useState
 import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
 import Home from './Home';
 import About from './About';
 import Contact from './Contact';
-import Login from './Login';
-import Admin from './Admin';
-import PrivateRoute from './PrivateRoute';
+import Login from './Login'; // New import
 import './App.css';
 
 function App() {
-  const [loggedInUser, setLoggedInUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-
-  useEffect(() => {
-    // Check if user is logged in on component mount
-    const user = localStorage.getItem('user');
-    const role = localStorage.getItem('role');
-    if (user) {
-      setLoggedInUser(user);
-      setUserRole(role);
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-    setLoggedInUser(null);
-    setUserRole(null);
-  };
+  // Track the logged in user at the App level
+  const [loggedInUser, setLoggedInUser] = useState(null); 
 
   return (
     <div className="App">
@@ -40,22 +20,19 @@ function App() {
               <li><Link to="/">Home</Link></li>
               <li><Link to="/about">About</Link></li>
               <li><Link to="/contact">Contact</Link></li>
-              {loggedInUser ? (
-                <>
-                  {userRole === 'admin' && <li><Link to="/admin">Admin</Link></li>}
-                  <li><button onClick={handleLogout}>Logout</button></li>
-                </>
-              ) : (
-                <li><Link to="/login">Login</Link></li>
+
+              {/* Only show "Login" link if no one is logged in */}
+              {!loggedInUser && (
+                <li><Link to="/login">Login</Link></li> 
               )}
             </ul>
 
+            {/* Display welcome message in top right if logged in */}
             {loggedInUser && (
               <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
                 Welcome, {loggedInUser}
-                {userRole === 'admin' && ' (Admin)'}
               </div>
-            )}
+            )} 
           </nav>
         </header>
         <main>
@@ -63,20 +40,11 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+
+            {/*Pass a callback to Login to set the loggedInUser */}
             <Route 
               path="/login" 
-              element={<Login onLoginSuccess={(user, role) => {
-                setLoggedInUser(user);
-                setUserRole(role);
-              }} />} 
-            />
-            <Route
-              path="/admin"
-              element={
-                <PrivateRoute adminOnly>
-                  <Admin />
-                </PrivateRoute>
-              }
+              element={<Login onLoginSuccess={(user) => setLoggedInUser(user)} />} 
             />
           </Routes>
         </main>
