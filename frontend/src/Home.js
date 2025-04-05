@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const [zipCode, setZipCode] = useState('');
-  const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate(); // Hook for navigation
 
   const handleZipCodeChange = (event) => {
     setZipCode(event.target.value);
@@ -14,41 +15,44 @@ function Home() {
     event.preventDefault();
     setLoading(true);
     setError(null);
-    setPrices([]);
 
     const items = ['milk', 'eggs', 'bread', 'chicken breast'];
-    const apiEndpoint = 'http://127.0.0.1:5000/api/kroger'; 
+    const stores = [
+      { name: 'Kroger', endpoint: 'http://127.0.0.1:5001/api/kroger' },
+      { name: 'Publix', endpoint: 'http://127.0.0.1:5002/api/publix' },
+      { name: 'ALDI', endpoint: 'http://127.0.0.1:5003/api/aldi' },
+    ];
+
+    const fetchPrices = async (item, store) => {
+      try {
+        const response = await fetch(store.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zipCode, item }),
+        });
+        if (!response.ok) throw new Error(`Failed to fetch ${item} from ${store.name}`);
+        const data = await response.json();
+        const priceKey = `${store.name.toLowerCase()}_prices`;
+        return data[priceKey]?.price || 'N/A';
+      } catch (err) {
+        console.error(`Error fetching ${item} from ${store.name}:`, err);
+        return 'Error';
+      }
+    };
 
     try {
-      const promises = items.map(async (item) => {
-        try {
-          console.log(`Fetching price for ${item} in ZIP ${zipCode}`);
-          const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ zipCode, item }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          console.log(`Received data for ${item}:`, data);
-
-          if (data.kroger_prices && data.kroger_prices.price) {
-            return { item, price: data.kroger_prices.price };
-          } else {
-            throw new Error(`Invalid response format for ${item}`);
-          }
-        } catch (err) {
-          console.error(`Error fetching ${item}:`, err);
-          return { item, price: 'Error' };
-        }
+      const itemPromises = items.map(async (item) => {
+        const storePromises = stores.map((store) => fetchPrices(item, store));
+        const storePrices = await Promise.all(storePromises);
+        const prices = stores.reduce((acc, store, index) => {
+          acc[store.name] = storePrices[index];
+          return acc;
+        }, {});
+        return { item, prices };
       });
 
-      const fetchedPrices = await Promise.all(promises);
-      setPrices(fetchedPrices);
+      const fetchedData = await Promise.all(itemPromises);
+      navigate('/results', { state: { data: fetchedData } }); // Navigate with data
     } catch (err) {
       setError('Something went wrong. Please try again.');
       console.error('Overall fetch error:', err);
@@ -74,27 +78,7 @@ function Home() {
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
-
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      {prices.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {prices.map((entry, index) => (
-              <tr key={index}>
-                <td>{entry.item}</td>
-                <td>{entry.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
     </section>
   );
 }
