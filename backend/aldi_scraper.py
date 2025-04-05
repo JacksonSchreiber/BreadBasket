@@ -50,7 +50,7 @@ def scrape_aldi(zip_code, item="milk"):
         input("Press Enter to close the browser...")
 
         browser.close()
-        return results
+      # return results
 
 @app.route('/api/aldi', methods=['POST'])
 def get_aldi_prices():
