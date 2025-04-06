@@ -61,7 +61,7 @@ def get_publix_prices():
 
     prices = scrape_publix(zip_code, item)
     print(prices)
-    return jsonify({'publix_prices': prices})
+    return jsonify({'product_data': prices})
 
 if __name__ == '__main__':
     app.run(port = 5002, debug=True)
