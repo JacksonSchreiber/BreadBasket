@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { allItems } from './categories';
 
 function Home() {
   const [zipCode, setZipCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
   const handleZipCodeChange = (event) => {
     setZipCode(event.target.value);
@@ -16,7 +17,6 @@ function Home() {
     setLoading(true);
     setError(null);
 
-    const items = ['milk', 'eggs', 'bread', 'chicken breast'];
     const stores = [
       { name: 'Kroger', endpoint: 'http://127.0.0.1:5001/api/kroger' },
       { name: 'Publix', endpoint: 'http://127.0.0.1:5002/api/publix' },
@@ -30,18 +30,17 @@ function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ zipCode, item }),
         });
-        if (!response.ok) throw new Error(`Failed to fetch ${item} from ${store.name}`);
+        if (!response.ok) return 'N/A';
         const data = await response.json();
-        const priceKey = `${store.name.toLowerCase()}_prices`;
-        return data[priceKey]?.price || 'N/A';
-      } catch (err) {
-        console.error(`Error fetching ${item} from ${store.name}:`, err);
-        return 'Error';
+        return data.price || 'N/A';
+      } catch {
+        return 'N/A';
       }
     };
 
     try {
-      const itemPromises = items.map(async (item) => {
+      // Fetch prices for all items across all stores
+      const itemPromises = allItems.map(async (item) => {
         const storePromises = stores.map((store) => fetchPrices(item, store));
         const storePrices = await Promise.all(storePromises);
         const prices = stores.reduce((acc, store, index) => {
@@ -52,19 +51,20 @@ function Home() {
       });
 
       const fetchedData = await Promise.all(itemPromises);
-      navigate('/results', { state: { data: fetchedData } }); // Navigate with data
+      navigate('/results', { state: { data: fetchedData } });
     } catch (err) {
       setError('Something went wrong. Please try again.');
-      console.error('Overall fetch error:', err);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section>
-      <h2>Find Affordable Groceries</h2>
+    <div className="home-container">
+      <h1>Find Affordible Groceries</h1>
       <form onSubmit={handleSubmit}>
+        {/* ZIP Code Input Field */}
         <label htmlFor="zipCode">Enter your ZIP code:</label>
         <input
           type="text"
@@ -72,14 +72,13 @@ function Home() {
           value={zipCode}
           onChange={handleZipCodeChange}
           placeholder="e.g., 33713"
-          disabled={loading}
         />
         <button type="submit" disabled={loading}>
-          {loading ? 'Searching...' : 'Search'}
+          {loading ? 'Loading...' : 'Compare Prices'}
         </button>
+        {error && <p className="error">{error}</p>}
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </section>
+    </div>
   );
 }
 
