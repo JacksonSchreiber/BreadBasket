@@ -8,7 +8,7 @@ CORS(app)
 
 def scrape_publix(zip_code, item="milk"):
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=["--deny-permission-prompts"],)
+        browser = p.chromium.launch(headless=True, args=["--deny-permission-prompts"],)
         context = browser.new_context()
         page = context.new_page()
 
@@ -16,7 +16,7 @@ def scrape_publix(zip_code, item="milk"):
         page.goto("https://www.publix.com/locations")
         page.fill('input[placeholder="Enter a City, State, or Zip Code"]', zip_code)
         page.keyboard.press("Enter")
-        page.wait_for_selector('span.button__label:has-text("Choose store")', timeout=5000)
+        #page.wait_for_selector('span.button__label:has-text("Choose store")', timeout=5000)
 
         # Click first store button to load
         page.locator('span.button__label:has-text("Choose store")').first.click()
@@ -28,7 +28,7 @@ def scrape_publix(zip_code, item="milk"):
         page.locator('span:has-text("Confirm")').click()
         page.fill('input[id="search-bar-input"]', item)
         page.keyboard.press("Enter")
-        time.sleep(0.5)
+        #time.sleep(0.5)
         #page.locator("div.e-5p3lvt > div.e-1jj9900 > button.e-1nqp5xs > span").click()
 
         # Extract product data
@@ -58,7 +58,7 @@ def get_publix_prices():
     item = data.get('item', 'milk')
 
     prices = scrape_publix(zip_code, item)
-    print(prices)
+    #print(prices)
     return jsonify({'product_data': prices[0]}), 200 # Since this is an array and the frontend expects a flat object, just returning the 0th element
 
 if __name__ == '__main__':
