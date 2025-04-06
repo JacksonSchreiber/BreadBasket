@@ -54,12 +54,12 @@ def scrape_publix(zip_code, item="milk"):
 def get_publix_prices():
     data = request.json
     zip_code = data.get('zipCode')
-    print(zip_code)
+    #print(zip_code)
     item = data.get('item', 'milk')
 
     prices = scrape_publix(zip_code, item)
     print(prices)
-    return jsonify({'product_data': prices})
+    return jsonify({'product_data': prices[0]}), 200 # Since this is an array and the frontend expects a flat object, just returning the 0th element
 
 if __name__ == '__main__':
     app.run(port = 5002, debug=True)
