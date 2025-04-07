@@ -60,7 +60,7 @@ def get_aldi_prices():
 
     prices = scrape_aldi(zip_code, item)
     print(prices)
-    return jsonify({'aldi_prices': prices})
+    return jsonify({'product_data': prices})
  
 if __name__ == '__main__':
     app.run(port = 5003, debug=True)

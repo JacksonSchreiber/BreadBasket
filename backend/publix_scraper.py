@@ -8,7 +8,7 @@ CORS(app)
 
 def scrape_publix(zip_code, item="milk"):
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=["--deny-permission-prompts"],)
+        browser = p.chromium.launch(headless=True, args=["--deny-permission-prompts"],)
         context = browser.new_context()
         page = context.new_page()
 
@@ -16,7 +16,7 @@ def scrape_publix(zip_code, item="milk"):
         page.goto("https://www.publix.com/locations")
         page.fill('input[placeholder="Enter a City, State, or Zip Code"]', zip_code)
         page.keyboard.press("Enter")
-        page.wait_for_selector('span.button__label:has-text("Choose store")', timeout=5000)
+        #page.wait_for_selector('span.button__label:has-text("Choose store")', timeout=5000)
 
         # Click first store button to load
         page.locator('span.button__label:has-text("Choose store")').first.click()
@@ -25,17 +25,15 @@ def scrape_publix(zip_code, item="milk"):
         page.goto(f"https://www.publix.com/search")
         page.locator('span.button__label:has-text("Delivery & curbside")').first.click()
         page.locator('span.button__label:has-text("Proceed to Instacart")').first.click()
-        page.locator('span.e-e2f3my:has-text("Confirm")').click()
+        page.locator('span:has-text("Confirm")').click()
         page.fill('input[id="search-bar-input"]', item)
         page.keyboard.press("Enter")
-        page.locator('div.e-zjik7:has-text("Sort")').click()
-        page.locator('div.e-l36v6l:has-text("Price: lowest first")').click()
-        time.sleep(0.5)
-        page.locator("div.e-5p3lvt > div.e-1jj9900 > button.e-1nqp5xs > span").click()
+        #time.sleep(0.5)
+        #page.locator("div.e-5p3lvt > div.e-1jj9900 > button.e-1nqp5xs > span").click()
 
         # Extract product data
         price = page.locator("div.e-2feaft").first.text_content().split('$')[1]
-        print(price)
+        # print(price)
         results = []
         results.append({"title": item, "price": price})
 
@@ -56,12 +54,12 @@ def scrape_publix(zip_code, item="milk"):
 def get_publix_prices():
     data = request.json
     zip_code = data.get('zipCode')
-    print(zip_code)
+    #print(zip_code)
     item = data.get('item', 'milk')
 
     prices = scrape_publix(zip_code, item)
-    print(prices)
-    return jsonify({'publix_prices': prices})
+    #print(prices)
+    return jsonify({'product_data': prices[0]}), 200 # Since this is an array and the frontend expects a flat object, just returning the 0th element
 
 if __name__ == '__main__':
     app.run(port = 5002, debug=True)

@@ -2,13 +2,11 @@ import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+from api_secrets import CLIENT_ID, CLIENT_SECRET
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Kroger API Creds:
-CLIENT_ID = "breadbasket-243261243034246a79762e693372424b5a70524e2f5771706d4548547564385547777445674f2e3847396f39366a34764d6c533555614a77492e564f3615842865638524082"
-CLIENT_SECRET = "dC-xIuXpc0n_RM8FTEoZu45hxVsVT2HL8caKjqrT"
 
 # Global variables to store the access token and its expiry time
 ACCESS_TOKEN = None
@@ -82,7 +80,7 @@ def get_kroger_product():
         if not loc_json.get("data") or len(loc_json["data"]) == 0:
             return jsonify({
                 "error": "No locations found for the given ZIP code"
-            }), 404
+            }), 600
         # Use the first returned location
         first_location = loc_json["data"][0]
         location_id = first_location.get("locationId")
@@ -114,7 +112,7 @@ def get_kroger_product():
         if not prod_json.get("data") or len(prod_json["data"]) == 0:
             return jsonify({
                 "error": "No products found matching the search criteria"
-            }), 404
+            }), 601
         product = prod_json["data"][0]
         # Get product description/pricing from the first item in the product
         title = product.get("description", item)
@@ -132,7 +130,8 @@ def get_kroger_product():
             "details": str(e)
         }), 500
 
-    return jsonify({"kroger_prices": result})
+    #print("Produect data: ", [result])
+    return jsonify({"product_data": result}), 200 # Return a generic product_data that has "price" somewhere in it
 
 if __name__ == '__main__':
     app.run(port = 5001, debug=True)
