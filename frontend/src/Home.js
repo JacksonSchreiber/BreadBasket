@@ -41,7 +41,7 @@ function Home() {
         });
         if (!response.ok) return 'N/A';
         const data = await response.json();
-        return data.price || 'N/A';
+        return data.product_data.price || 'N/A'; // product_data is what all backend API should return to keep it friendly with frontend. each product_data should have a "price" in it
       } catch {
         return 'N/A';
       }
