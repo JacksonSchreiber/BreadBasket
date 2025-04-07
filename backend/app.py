@@ -355,6 +355,67 @@ def update_submission_notes(current_user, submission_id):
     
     return jsonify({'message': 'Notes updated successfully'}), 200
 
+@app.route('/user/profile', methods=['GET'])
+@token_required
+def get_user_profile(current_user):
+    try:
+        db = get_db()
+        cursor = db.execute('SELECT username, email FROM users WHERE email = ?', (current_user,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        return jsonify({
+            'username': user['username'],
+            'email': user['email'],
+            'notifications': True,  # Default values since these are new features
+            'emailUpdates': True
+        }), 200
+    except Exception as e:
+        print("Error fetching user profile:", str(e))
+        return jsonify({'message': 'Error fetching user profile'}), 500
+
+@app.route('/user/update', methods=['POST'])
+@token_required
+def update_user_profile(current_user):
+    try:
+        data = request.json
+        db = get_db()
+        
+        # Get current user data
+        cursor = db.execute('SELECT * FROM users WHERE email = ?', (current_user,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Verify current password if provided
+        if data.get('currentPassword'):
+            if not check_password_hash(user['password'], data['currentPassword']):
+                return jsonify({'message': 'Current password is incorrect'}), 400
+
+            # Update password if new one is provided
+            if data.get('newPassword'):
+                new_password_hash = generate_password_hash(data['newPassword'])
+                db.execute('UPDATE users SET password = ? WHERE email = ?',
+                          (new_password_hash, current_user))
+
+        # Update username if provided
+        if data.get('username'):
+            try:
+                db.execute('UPDATE users SET username = ? WHERE email = ?',
+                          (data['username'], current_user))
+            except sqlite3.IntegrityError:
+                return jsonify({'message': 'Username already taken'}), 400
+
+        db.commit()
+        return jsonify({'message': 'Profile updated successfully'}), 200
+        
+    except Exception as e:
+        print("Error updating user profile:", str(e))
+        return jsonify({'message': 'Error updating profile'}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
 

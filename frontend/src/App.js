@@ -6,6 +6,7 @@ import Contact from './Contact';
 import Login from './Login';
 import Results from './Results';
 import Admin from './Admin';
+import AccountSettings from './AccountSettings';
 import PrivateRoute from './PrivateRoute';
 import './App.css';
 
@@ -143,6 +144,11 @@ function AppContent() {
           <Route path="/admin" element={
             <PrivateRoute adminOnly={true}>
               <Admin />
+            </PrivateRoute>
+          } />
+          <Route path="/account" element={
+            <PrivateRoute>
+              <AccountSettings />
             </PrivateRoute>
           } />
         </Routes>
