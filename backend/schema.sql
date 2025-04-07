@@ -7,7 +7,9 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     role TEXT DEFAULT 'user',
-    is_main_admin BOOLEAN DEFAULT 0
+    is_main_admin BOOLEAN DEFAULT 0,
+    notifications BOOLEAN DEFAULT 1,
+    email_updates BOOLEAN DEFAULT 1
 );
 
 CREATE TABLE contact_submissions (
