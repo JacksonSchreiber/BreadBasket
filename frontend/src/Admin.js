@@ -2,68 +2,133 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Admin.css';
 
+const API_URL = 'http://127.0.0.1:5002';
+
 function Admin() {
   const [submissions, setSubmissions] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('submissions');
+  const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      try {
-        // Fetch both submissions and users
-        const [submissionsResponse, usersResponse] = await Promise.all([
-          fetch('http://127.0.0.1:5000/admin/contact-submissions', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }),
-          fetch('http://127.0.0.1:5000/admin/users', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-        ]);
-
-        if (!submissionsResponse.ok || !usersResponse.ok) {
-          if (submissionsResponse.status === 401 || usersResponse.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/login');
-            return;
-          }
-          throw new Error('Failed to fetch data');
-        }
-
-        const [submissionsData, usersData] = await Promise.all([
-          submissionsResponse.json(),
-          usersResponse.json()
-        ]);
-
-        setSubmissions(submissionsData);
-        setUsers(usersData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [navigate]);
+  }, [filter]);
+
+  const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // Fetch both submissions and users
+      const [submissionsResponse, usersResponse] = await Promise.all([
+        fetch(`${API_URL}/admin/contact-submissions?filter=${filter}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${API_URL}/admin/users`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      ]);
+
+      if (!submissionsResponse.ok || !usersResponse.ok) {
+        if (submissionsResponse.status === 401 || usersResponse.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to fetch data');
+      }
+
+      const [submissionsData, usersData] = await Promise.all([
+        submissionsResponse.json(),
+        usersResponse.json()
+      ]);
+
+      setSubmissions(submissionsData);
+      setUsers(usersData);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch data');
+      setLoading(false);
+    }
+  };
+
+  const handleToggleResponse = async (submissionId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/contact-submissions/${submissionId}/toggle-response`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update submission status');
+      }
+
+      // Update the local state
+      setSubmissions(submissions.map(submission =>
+        submission.id === submissionId
+          ? { ...submission, responded: !submission.responded }
+          : submission
+      ));
+    } catch (err) {
+      setError('Failed to update submission status');
+    }
+  };
+
+  const handleUpdateNotes = async (submissionId, notes) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/contact-submissions/${submissionId}/update-notes`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ notes })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update notes');
+      }
+
+      // Update the local state
+      setSubmissions(submissions.map(submission =>
+        submission.id === submissionId
+          ? { ...submission, admin_notes: notes }
+          : submission
+      ));
+    } catch (err) {
+      setError('Failed to update notes');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString();
+  };
 
   const handlePromoteUser = async (email) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://127.0.0.1:5000/admin/promote', {
+      const response = await fetch(`${API_URL}/admin/promote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +153,7 @@ function Admin() {
   const handleDemoteUser = async (email) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://127.0.0.1:5000/admin/demote', {
+      const response = await fetch(`${API_URL}/admin/demote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,29 +175,19 @@ function Admin() {
     }
   };
 
-  if (loading) return (
-    <div className="admin-container">
-      <h2>Loading...</h2>
-    </div>
-  );
-
-  if (error) return (
-    <div className="admin-container">
-      <h2>Error</h2>
-      <p>{error}</p>
-    </div>
-  );
+  if (loading) return <div className="admin-loading">Loading...</div>;
+  if (error) return <div className="admin-error">{error}</div>;
 
   return (
     <div className="admin-container">
       <div className="admin-tabs">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
           onClick={() => setActiveTab('submissions')}
         >
           Contact Submissions
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
@@ -140,32 +195,84 @@ function Admin() {
         </button>
       </div>
 
-      {activeTab === 'submissions' ? (
+      {activeTab === 'submissions' && (
         <div className="submissions-section">
-          <h2>Contact Submissions</h2>
-          {submissions.length === 0 ? (
-            <p>No submissions yet.</p>
-          ) : (
-            <div className="submissions-list">
-              {submissions.map((submission) => (
-                <div key={submission.id} className="submission-card">
-                  <h3>From: {submission.name}</h3>
-                  <p>Email: {submission.email}</p>
-                  <p>Date: {new Date(submission.created_at).toLocaleString()}</p>
-                  <p className="message">{submission.message}</p>
+          <div className="filter-controls">
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Submissions</option>
+              <option value="pending">Pending</option>
+              <option value="responded">Responded</option>
+            </select>
+          </div>
+
+          <div className="submissions-list">
+            {submissions.length === 0 ? (
+              <div className="no-submissions">No submissions found.</div>
+            ) : (
+              submissions.map((submission) => (
+                <div
+                  key={submission.id}
+                  className={`submission-card ${submission.responded ? 'responded' : ''}`}
+                >
+                  <div className="submission-header">
+                    <h3>{submission.name}</h3>
+                    <div className="submission-status">
+                      <label className="status-toggle">
+                        <input
+                          type="checkbox"
+                          checked={submission.responded}
+                          onChange={() => handleToggleResponse(submission.id)}
+                        />
+                        <span className="status-label">
+                          {submission.responded ? 'Responded' : 'Pending'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  <p className="submission-email">{submission.email}</p>
+                  <p className="submission-message">{submission.message}</p>
+                  <p className="submission-date">
+                    Submitted: {formatDate(submission.submission_date)}
+                  </p>
+                  <div className="admin-notes">
+                    <textarea
+                      placeholder="Add notes about this submission..."
+                      value={submission.admin_notes || ''}
+                      onChange={(e) => {
+                        setSubmissions(submissions.map(s =>
+                          s.id === submission.id
+                            ? { ...s, admin_notes: e.target.value }
+                            : s
+                        ));
+                      }}
+                      className="notes-textarea"
+                    />
+                    <button
+                      className="save-notes-button"
+                      onClick={() => handleUpdateNotes(submission.id, submission.admin_notes)}
+                    >
+                      Save Notes
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'users' && (
         <div className="users-section">
           <h2>User Management</h2>
-          {users.length === 0 ? (
-            <p>No users found.</p>
-          ) : (
-            <div className="users-list">
-              {users.map((user) => (
+          <div className="users-list">
+            {users.length === 0 ? (
+              <div className="no-users">No users found.</div>
+            ) : (
+              users.map((user) => (
                 <div key={user.id} className="user-card">
                   <div className="user-info">
                     <h3>{user.username}</h3>
@@ -190,9 +297,9 @@ function Admin() {
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

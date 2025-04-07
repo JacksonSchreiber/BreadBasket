@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
 import { GoogleLogin } from '@react-oauth/google';
 
+const API_URL = 'http://127.0.0.1:5002';
+
 function Login(props) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -14,9 +16,10 @@ function Login(props) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     console.log('Login submitted:', { loginEmail, loginPassword });
+    setLoginMessage('Logging in...');
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -42,7 +45,7 @@ function Login(props) {
       }
     } catch (error) {
       console.error('Error logging in:', error);
-      setLoginMessage('Error logging in. Please try again.');
+      setLoginMessage('Error connecting to server. Please try again.');
     }
   };
 
@@ -52,7 +55,7 @@ function Login(props) {
     setRegisterMessage('Registering...');
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/register', {
+      const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -102,38 +105,36 @@ function Login(props) {
   };
 
   return (
-    <section className="login-section">
+    <div className="auth-container">
       <h2>Login or Register</h2>
-
-      {loginMessage && <p style={{ color: 'red' }}>{loginMessage}</p>}
-
-      <div className="form-container">
-        {/* Login Form */}
-        <div className="form-box">
+      {loginMessage && <div className={loginMessage.includes('successful') ? 'success-message' : 'error-message'}>{loginMessage}</div>}
+      
+      <div className="auth-sections">
+        <div className="auth-section">
           <h3>Login</h3>
           <form onSubmit={handleLoginSubmit}>
-            <label htmlFor="loginEmail">Email:</label>
-            <input
-              type="email"
-              id="loginEmail"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-            <label htmlFor="loginPassword">Password:</label>
-            <input
-              type="password"
-              id="loginPassword"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
-            <button type="submit">Login</button>
+            <div className="form-group">
+              <label>Email:</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="auth-button">Login</button>
           </form>
 
-          <div style={{ marginTop: '20px' }}>
+          <div className="google-login">
             <p>Or login with Google:</p>
             <GoogleLogin
               onSuccess={handleGoogleLogin}
@@ -142,43 +143,42 @@ function Login(props) {
           </div>
         </div>
 
-        {/* Registration Form */}
-        <div className="form-box">
+        <div className="auth-section">
           <h3>Register</h3>
-          {registerMessage && <p style={{ color: registerMessage.includes('successful') ? 'green' : 'red' }}>{registerMessage}</p>}
+          {registerMessage && <div className={registerMessage.includes('successful') ? 'success-message' : 'error-message'}>{registerMessage}</div>}
           <form onSubmit={handleRegisterSubmit}>
-            <label htmlFor="regUsername">Username:</label>
-            <input
-              type="text"
-              id="regUsername"
-              value={regUsername}
-              onChange={(e) => setRegUsername(e.target.value)}
-              placeholder="Choose a username"
-              required
-            />
-            <label htmlFor="regEmail">Email:</label>
-            <input
-              type="email"
-              id="regEmail"
-              value={regEmail}
-              onChange={(e) => setRegEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-            <label htmlFor="regPassword">Password:</label>
-            <input
-              type="password"
-              id="regPassword"
-              value={regPassword}
-              onChange={(e) => setRegPassword(e.target.value)}
-              placeholder="Create a password"
-              required
-            />
-            <button type="submit">Register</button>
+            <div className="form-group">
+              <label>Username:</label>
+              <input
+                type="text"
+                value={regUsername}
+                onChange={(e) => setRegUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Email:</label>
+              <input
+                type="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="auth-button">Register</button>
           </form>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 

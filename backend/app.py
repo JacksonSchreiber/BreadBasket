@@ -30,52 +30,23 @@ def close_db(error):
         db.close()
 
 def init_db():
-    with app.app_context():
-        db = get_db()
-        
-        # Drop existing tables to ensure clean state
-        db.execute('DROP TABLE IF EXISTS users')
-        db.execute('DROP TABLE IF EXISTS contact_submissions')
-        
-        # Create users table with is_main_admin column
-        db.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password TEXT,
-                email TEXT UNIQUE,
-                role TEXT DEFAULT 'user',
-                is_main_admin BOOLEAN DEFAULT 0
-            )
-        ''')
-        
-        # Create contact submissions table
-        db.execute('''
-            CREATE TABLE IF NOT EXISTS contact_submissions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                message TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Check if main admin exists
-        cursor = db.execute('SELECT * FROM users WHERE email = ?', (MAIN_ADMIN_EMAIL,))
-        admin = cursor.fetchone()
-        
-        if not admin:
-            # Create main admin account if it doesn't exist
-            hashed_password = generate_password_hash('BreadBasket@UF2025', method='pbkdf2:sha256')
-            db.execute('''
-                INSERT INTO users (username, email, password, role, is_main_admin)
-                VALUES (?, ?, ?, 'admin', 1)
-            ''', ('MainAdmin', MAIN_ADMIN_EMAIL, hashed_password))
-        
-        db.commit()
+    db = get_db()
+    with app.open_resource('schema.sql', mode='r') as f:
+        db.cursor().executescript(f.read())
+    db.commit()
 
-# Initialize the database
-init_db()
+@app.cli.command('init-db')
+def init_db_command():
+    init_db()
+    print('Initialized the database.')
+
+def create_contact_submission(name, email, message):
+    db = get_db()
+    db.execute(
+        'INSERT INTO contact_submissions (name, email, message, responded, submission_date) VALUES (?, ?, ?, ?, ?)',
+        (name, email, message, False, datetime.datetime.now().isoformat())
+    )
+    db.commit()
 
 def token_required(f):
     @wraps(f)
@@ -304,47 +275,85 @@ def get_data():
 
 # Contact submission endpoint
 @app.route('/contact', methods=['POST'])
-def submit_contact():
-    data = request.json
+def contact():
+    data = request.get_json()
     name = data.get('name')
     email = data.get('email')
     message = data.get('message')
-
-    if not name or not email or not message:
-        return jsonify({'message': 'Name, email, and message are required'}), 400
-
+    
+    if not all([name, email, message]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
     try:
-        db = get_db()
-        db.execute('INSERT INTO contact_submissions (name, email, message) VALUES (?, ?, ?)',
-                   (name, email, message))
-        db.commit()
-        return jsonify({'message': 'Message sent successfully'}), 201
-    except sqlite3.Error as e:
-        return jsonify({'message': 'Error saving message'}), 500
+        create_contact_submission(name, email, message)
+        return jsonify({'message': 'Contact form submitted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-# Admin route to get contact submissions
 @app.route('/admin/contact-submissions', methods=['GET'])
 @admin_required
 def get_contact_submissions(current_user):
-    try:
-        db = get_db()
-        cursor = db.execute('SELECT * FROM contact_submissions ORDER BY created_at DESC')
-        submissions = cursor.fetchall()
+    filter_type = request.args.get('filter', 'all')
+    
+    db = get_db()
+    query = 'SELECT * FROM contact_submissions'
+    
+    if filter_type == 'responded':
+        query += ' WHERE responded = 1'
+    elif filter_type == 'pending':
+        query += ' WHERE responded = 0'
         
-        # Convert to list of dictionaries
-        submissions_list = []
-        for submission in submissions:
-            submissions_list.append({
-                'id': submission['id'],
-                'name': submission['name'],
-                'email': submission['email'],
-                'message': submission['message'],
-                'created_at': submission['created_at']
-            })
-        
-        return jsonify(submissions_list), 200
-    except sqlite3.Error as e:
-        return jsonify({'message': 'Error fetching submissions'}), 500
+    query += ' ORDER BY submission_date DESC'
+    
+    submissions = db.execute(query).fetchall()
+    return jsonify([{
+        'id': row['id'],
+        'name': row['name'],
+        'email': row['email'],
+        'message': row['message'],
+        'responded': bool(row['responded']),
+        'submission_date': row['submission_date'],
+        'admin_notes': row['admin_notes']
+    } for row in submissions]), 200
+
+@app.route('/admin/contact-submissions/<int:submission_id>/toggle-response', methods=['POST'])
+@admin_required
+def toggle_submission_response(current_user, submission_id):
+    db = get_db()
+    submission = db.execute('SELECT responded FROM contact_submissions WHERE id = ?', 
+                          [submission_id]).fetchone()
+    
+    if not submission:
+        return jsonify({'error': 'Submission not found'}), 404
+    
+    new_status = not bool(submission['responded'])
+    db.execute('UPDATE contact_submissions SET responded = ? WHERE id = ?',
+              [new_status, submission_id])
+    db.commit()
+    
+    return jsonify({'message': 'Status updated successfully', 'responded': new_status}), 200
+
+@app.route('/admin/contact-submissions/<int:submission_id>/update-notes', methods=['POST'])
+@admin_required
+def update_submission_notes(current_user, submission_id):
+    data = request.get_json()
+    notes = data.get('notes')
+    
+    if notes is None:
+        return jsonify({'error': 'Notes field is required'}), 400
+    
+    db = get_db()
+    submission = db.execute('SELECT id FROM contact_submissions WHERE id = ?', 
+                          [submission_id]).fetchone()
+    
+    if not submission:
+        return jsonify({'error': 'Submission not found'}), 404
+    
+    db.execute('UPDATE contact_submissions SET admin_notes = ? WHERE id = ?',
+              [notes, submission_id])
+    db.commit()
+    
+    return jsonify({'message': 'Notes updated successfully'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
