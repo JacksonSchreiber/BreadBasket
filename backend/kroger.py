@@ -2,7 +2,6 @@ import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
-from api_secrets import CLIENT_ID, CLIENT_SECRET
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -16,7 +15,10 @@ def refresh_access_token():
     """
     Refreshes the access token
     Sets the global ACCESS_TOKEN and TOKEN_EXPIRY variables
+    
     """
+    CLIENT_ID = "breadbasket-243261243034246a79762e693372424b5a70524e2f5771706d4548547564385547777445674f2e3847396f39366a34764d6c533555614a77492e564f3615842865638524082"
+    CLIENT_SECRET = "3ONSUkDwPXG6o5IKIBFYb00VTQdTYmEydQPMHcrN"
     global ACCESS_TOKEN, TOKEN_EXPIRY
     token_url = "https://api.kroger.com/v1/connect/oauth2/token"
     payload = {
