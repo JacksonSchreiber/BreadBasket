@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
 import { GoogleLogin } from '@react-oauth/google';
 
-const API_URL = 'http://127.0.0.1:5002';
+// Use a more flexible API URL that can be configured externally
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5002';
 
 function Login(props) {
   const [loginEmail, setLoginEmail] = useState('');
@@ -12,6 +13,7 @@ function Login(props) {
   const [regPassword, setRegPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [registerMessage, setRegisterMessage] = useState('');
+  const [isGoogleLoginEnabled, setIsGoogleLoginEnabled] = useState(false); // Temporarily disable Google login
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -85,18 +87,41 @@ function Login(props) {
   const handleGoogleLogin = (credentialResponse) => {
     console.log("✅ Google login success:", credentialResponse);
 
-    // If you later want to send this token to your backend:
-    // fetch('http://localhost:5000/google-login', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ token: credentialResponse.credential })
-    // });
-
-    if (props.onLoginSuccess) {
-      props.onLoginSuccess("Google User");
-    }
-
-    setLoginMessage("Google login successful!");
+    // Check if backend is reachable first
+    fetch(`${API_URL}/ping`, { method: 'GET' })
+      .then(response => {
+        if (response.ok) {
+          // Send the token to the backend
+          return fetch(`${API_URL}/google-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: credentialResponse.credential })
+          });
+        } else {
+          throw new Error("Backend server is not available");
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === "Google login successful") {
+          // Store user info
+          localStorage.setItem('user', data.email);
+          localStorage.setItem('token', data.token);  // Use server generated token
+          localStorage.setItem('role', data.role);    // Store role from server
+          
+          if (props.onLoginSuccess) {
+            props.onLoginSuccess(data.email, data.role);
+          }
+          
+          setLoginMessage("Google login successful!");
+        } else {
+          setLoginMessage("Google login failed: " + data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Error during Google login:", error);
+        setLoginMessage("Error connecting to server. Please try again.");
+      });
   };
 
   const handleGoogleError = () => {
@@ -136,10 +161,14 @@ function Login(props) {
 
           <div className="google-login">
             <p>Or login with Google:</p>
-            <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={handleGoogleError}
-            />
+            {isGoogleLoginEnabled ? (
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={handleGoogleError}
+              />
+            ) : (
+              <div className="error-message">Google login temporarily unavailable</div>
+            )}
           </div>
         </div>
 

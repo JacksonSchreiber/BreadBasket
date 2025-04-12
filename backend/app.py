@@ -118,6 +118,10 @@ def register_user():
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
     try:
+        # Check if database exists, if not initialize it
+        if not os.path.exists(DATABASE):
+            init_db()
+            
         db = get_db()
         db.execute('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
                    (username, hashed_password, email, 'user'))
@@ -125,6 +129,9 @@ def register_user():
         return jsonify({'message': 'User registered successfully'}), 201
     except sqlite3.IntegrityError:
         return jsonify({'message': 'Username or email already taken'}), 400
+    except Exception as e:
+        print("Registration error:", str(e))
+        return jsonify({'message': 'Server error during registration'}), 500
 
 # Admin management endpoints
 @app.route('/admin/users', methods=['GET'])
@@ -257,11 +264,29 @@ def google_login():
         user = cursor.fetchone()
 
         if not user:
-            db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
-                       (user_name, '', user_email))
+            # Create new user if they don't exist
+            db.execute('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
+                      (user_name, '', user_email, 'user'))
             db.commit()
-
-        return jsonify({"message": "Google login successful", "email": user_email, "name": user_name}), 200
+            
+            # Fetch the newly created user to get their role
+            cursor = db.execute('SELECT * FROM users WHERE email = ?', (user_email,))
+            user = cursor.fetchone()
+        
+        # Generate JWT token
+        token = jwt.encode({
+            'user': user_email,
+            'role': user['role'] if user else 'user',
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }, app.config['SECRET_KEY'])
+        
+        return jsonify({
+            "message": "Google login successful", 
+            "email": user_email, 
+            "name": user_name,
+            "token": token,
+            "role": user['role'] if user else 'user'
+        }), 200
 
     except ValueError as e:
         print("Google token verification failed:", e)
@@ -415,6 +440,11 @@ def update_user_profile(current_user):
     except Exception as e:
         print("Error updating user profile:", str(e))
         return jsonify({'message': 'Error updating profile'}), 500
+
+# Simple ping endpoint to check if the server is up
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({'status': 'ok'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
