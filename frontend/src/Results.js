@@ -167,7 +167,7 @@ function Results() {
     }
     return sortConfig.direction === 'ascending' ? '↑' : '↓';
   };
-  
+
   if (data.length === 0) {
     return <p>No data available. Please try searching again.</p>;
   }
@@ -247,14 +247,14 @@ function Results() {
         const cheapestStoreInfo = findCheapestStoreForCategory(filteredData[category] || []);
         
         return (
-          <div key={category} className="category-section">
+        <div key={category} className="category-section">
             <div className="category-header">
-              <h3
+          <h3
                 onClick={() => toggleCategory(category)}
                 className="clickable"
-              >
+          >
                 {category} {expandedCategories[category] ? '▼' : '▶'}
-              </h3>
+          </h3>
               {cheapestStoreInfo.store && (
                 <div className="best-store-tag">
                   Best Store: <span className="best-store">{cheapestStoreInfo.store}</span> 
@@ -265,9 +265,9 @@ function Results() {
             
             {expandedCategories[category] && (
               <div className="category-content">
-                <table className="results-table">
-                  <thead>
-                    <tr>
+            <table className="results-table">
+              <thead>
+                <tr>
                       <th onClick={() => requestSort('item')}>
                         Item {getSortIndicator('item')}
                       </th>
@@ -276,16 +276,16 @@ function Results() {
                         <th key={store} onClick={() => requestSort('store', index)}>
                           {store} {getSortIndicator('store', index)}
                         </th>
-                      ))}
+                  ))}
                       <th>Best Deal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                </tr>
+              </thead>
+              <tbody>
                     {filteredData[category]?.map((entry, index) => {
                       const cheapestStore = findCheapestStore(entry.prices);
                       
                       return (
-                        <tr key={index}>
+                  <tr key={index}>
                           <td className="item-name">{entry.item}</td>
                           {showUnitPrice && <td>{itemUnits[entry.item] || 'each'}</td>}
                           {stores.map((store) => {
@@ -308,11 +308,11 @@ function Results() {
                               'N/A'
                             )}
                           </td>
-                        </tr>
+                  </tr>
                       );
                     })}
-                  </tbody>
-                </table>
+              </tbody>
+            </table>
               </div>
             )}
           </div>

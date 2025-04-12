@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { allItems, categories } from './categories';
+import StoreLogos from './StoreLogos';
 import './Home.css';
 
 function Home() {
@@ -277,6 +278,9 @@ function Home() {
           )}
         </div>
       </section>
+
+      {/* Store Logos Section */}
+      <StoreLogos />
     </div>
   );
 }
