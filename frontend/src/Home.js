@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { allItems } from './categories';
+import { allItems, categories } from './categories';
 import './Home.css';
 
 function Home() {
@@ -8,6 +8,9 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,10 +22,81 @@ function Home() {
     document.querySelectorAll('.scroll-fade-in, .scroll-scale').forEach(
       element => element.classList.add('visible')
     );
+    
+    // Initialize selected categories
+    const initialCategoryState = {};
+    Object.keys(categories).forEach(category => {
+      initialCategoryState[category] = false;
+    });
+    setSelectedCategories(initialCategoryState);
   }, []);
+  
+  const toggleItemSelection = (item) => {
+    setSelectedItems(prev => {
+      if (prev.includes(item)) {
+        return prev.filter(i => i !== item);
+      } else {
+        return [...prev, item];
+      }
+    });
+  };
+  
+  const toggleCategory = (category) => {
+    const updatedCategories = {
+      ...selectedCategories,
+      [category]: !selectedCategories[category]
+    };
+    setSelectedCategories(updatedCategories);
+    
+    // Update selected items based on category selection
+    const newSelectedItems = [...selectedItems];
+    
+    if (updatedCategories[category]) {
+      // Add all items from this category that aren't already selected
+      categories[category].forEach(item => {
+        if (!newSelectedItems.includes(item)) {
+          newSelectedItems.push(item);
+        }
+      });
+    } else {
+      // Remove all items from this category
+      return setSelectedItems(newSelectedItems.filter(item => !categories[category].includes(item)));
+    }
+    
+    setSelectedItems(newSelectedItems);
+  };
+  
+  const selectAllItems = () => {
+    setSelectedItems([...allItems]);
+    const allSelected = {};
+    Object.keys(categories).forEach(category => {
+      allSelected[category] = true;
+    });
+    setSelectedCategories(allSelected);
+  };
+  
+  const clearSelection = () => {
+    setSelectedItems([]);
+    const noneSelected = {};
+    Object.keys(categories).forEach(category => {
+      noneSelected[category] = false;
+    });
+    setSelectedCategories(noneSelected);
+  };
 
   const handleZipCodeSubmit = async (event) => {
     event.preventDefault();
+    
+    if (!showItemSelector) {
+      setShowItemSelector(true);
+      return;
+    }
+    
+    if (selectedItems.length === 0) {
+      setError('Please select at least one item to compare');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
@@ -48,7 +122,7 @@ function Home() {
     };
 
     try {
-      const itemPromises = allItems.map(async (item) => {
+      const itemPromises = selectedItems.map(async (item) => {
         const storePromises = stores.map((store) => fetchPrices(item, store));
         const storePrices = await Promise.all(storePromises);
         const prices = stores.reduce((acc, store, index) => {
@@ -81,22 +155,64 @@ function Home() {
             Compare prices across multiple stores and save money on your groceries
           </p>
           {loggedIn ? (
-            <form onSubmit={handleZipCodeSubmit} className="zip-form">
-              <input
-                type="text"
-                value={zipCode}
-                onChange={(e) => setZipCode(e.target.value)}
-                placeholder="Enter your ZIP code"
-                className="zip-input"
-                pattern="[0-9]{5}"
-                title="Please enter a valid 5-digit ZIP code"
-                required
-              />
-              <button type="submit" className="cta-button" disabled={loading}>
-                {loading ? 'Loading...' : 'Compare Prices'}
-              </button>
-              {error && <p className="error-message">{error}</p>}
-            </form>
+            <>
+              <form onSubmit={handleZipCodeSubmit} className="zip-form">
+                <input
+                  type="text"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                  placeholder="Enter your ZIP code"
+                  className="zip-input"
+                  pattern="[0-9]{5}"
+                  title="Please enter a valid 5-digit ZIP code"
+                  required
+                />
+                <button type="submit" className="cta-button" disabled={loading}>
+                  {loading ? 'Loading...' : showItemSelector ? 'Compare Prices' : 'Continue'}
+                </button>
+                {error && <p className="error-message">{error}</p>}
+              </form>
+              
+              {showItemSelector && (
+                <div className="item-selector">
+                  <h3>Select items to compare</h3>
+                  <div className="selection-controls">
+                    <button type="button" onClick={selectAllItems} className="select-btn">Select All</button>
+                    <button type="button" onClick={clearSelection} className="clear-btn">Clear All</button>
+                    <span className="items-count">{selectedItems.length} items selected</span>
+                  </div>
+                  
+                  <div className="categories-container">
+                    {Object.entries(categories).map(([category, items]) => (
+                      <div key={category} className="category-container">
+                        <div className="category-header">
+                          <label className="category-checkbox">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedCategories[category] || false}
+                              onChange={() => toggleCategory(category)}
+                            />
+                            <span className="category-name">{category}</span>
+                          </label>
+                        </div>
+                        <div className="items-grid">
+                          {items.map(item => (
+                            <label key={item} className="item-checkbox">
+                              <input 
+                                type="checkbox"
+                                checked={selectedItems.includes(item)}
+                                onChange={() => toggleItemSelection(item)}
+                              />
+                              <span className="item-name">{item}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <Link to="/login" className="cta-button">
               Get Started
