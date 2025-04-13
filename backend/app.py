@@ -325,6 +325,9 @@ def login_user():
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             }, app.config['SECRET_KEY'])
             print("Login successful for:", login_email)  # Add debug logging
+            
+            # ensure it's a str, not bytes
+            token = token.decode('utf-8') if isinstance(token, bytes) else token
             return jsonify({
                 'message': 'Login successful',
                 'token': token,
