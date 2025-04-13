@@ -21,14 +21,42 @@ function AppContent() {
   const [cartItemCount, setCartItemCount] = useState(0);
   const dropdownRef = useRef(null);
   const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedRole = localStorage.getItem('role');
-    if (storedUser && storedRole) {
-      setLoggedInUser(storedUser);
-      setUserRole(storedRole);
-    }
+    const verifyToken = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/verify-token', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsAuthenticated(true);
+          setUserRole(data.user.role);
+          setLoggedInUser(data.user.email);
+        } else {
+          // Clear invalid session
+          handleLogout();
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        handleLogout();
+      }
+      setIsLoading(false);
+    };
+
+    verifyToken();
 
     // Update initial cart count
     const updateCartCount = (items = null) => {
@@ -73,17 +101,22 @@ function AppContent() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
     localStorage.removeItem('token');
-    setLoggedInUser(null);
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
     setUserRole(null);
+    setLoggedInUser(null);
     setDropdownOpen(false);
   };
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="App">
@@ -111,7 +144,7 @@ function AppContent() {
                   Contact
                 </Link>
               </li>
-              {!loggedInUser && (
+              {!isAuthenticated && (
                 <li>
                   <Link to="/login" className={isActiveRoute('/login') ? 'active' : ''}>
                     Login
@@ -134,7 +167,7 @@ function AppContent() {
               aria-label="Shopping Cart"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path d="M9 22a1 1 0 100-2 1 1 0 000 2zM20 22a1 1 0 100-2 1 1 0 000 2zM1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"></path>
               </svg>
               {cartItemCount > 0 && (
                 <span className="cart-count">{cartItemCount}</span>
@@ -143,22 +176,13 @@ function AppContent() {
             {loggedInUser && (
               <div className="welcome-container" ref={dropdownRef}>
                 <div 
-                  className="welcome-message" 
+                  className="welcome-message"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
-                  Welcome, {loggedInUser}
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 20 20" 
-                    fill="currentColor" 
-                    style={{ 
-                      transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
-                      transition: 'transform 0.3s ease'
-                    }}
-                  >
-                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                   </svg>
+                  {loggedInUser}
                 </div>
                 <div className={`welcome-dropdown ${dropdownOpen ? 'show' : ''}`}>
                   <Link to="/account" className="dropdown-item">
@@ -193,22 +217,33 @@ function AppContent() {
               <Route path="/contact" element={<Contact />} />
               <Route
                 path="/login"
-                element={<Login onLoginSuccess={(user, role) => {
-                  setLoggedInUser(user);
-                  setUserRole(role);
-                }} />}
+                element={
+                  <Login 
+                    onLoginSuccess={(token, role, email) => {
+                      setIsAuthenticated(true);
+                      setUserRole(role);
+                      setLoggedInUser(email);
+                    }} 
+                  />
+                }
               />
               <Route path="/results" element={<Results />} />
-              <Route path="/admin" element={
-                <PrivateRoute adminOnly={true}>
-                  <Admin />
-                </PrivateRoute>
-              } />
-              <Route path="/account" element={
-                <PrivateRoute>
-                  <AccountSettings />
-                </PrivateRoute>
-              } />
+              <Route 
+                path="/admin" 
+                element={
+                  <PrivateRoute adminOnly={true}>
+                    <Admin />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/account" 
+                element={
+                  <PrivateRoute>
+                    <AccountSettings />
+                  </PrivateRoute>
+                } 
+              />
             </Routes>
           </CSSTransition>
         </TransitionGroup>

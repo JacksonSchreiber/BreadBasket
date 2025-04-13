@@ -3,16 +3,16 @@ import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const userRole = localStorage.getItem('role');
   
   if (!token) {
     // Not logged in, redirect to login page
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && role !== 'admin') {
+  if (adminOnly && userRole !== 'admin') {
     // Not an admin, redirect to home page
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   // Authorized, render component

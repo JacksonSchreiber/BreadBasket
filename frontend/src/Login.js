@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
 import { GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 
-// Use a more flexible API URL that can be configured externally
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5002';
+// Update API URL to match the backend port (5000)
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
 
-function Login(props) {
+function Login({ onLoginSuccess }) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [regUsername, setRegUsername] = useState('');
@@ -14,14 +15,14 @@ function Login(props) {
   const [loginMessage, setLoginMessage] = useState('');
   const [registerMessage, setRegisterMessage] = useState('');
   const [isGoogleLoginEnabled, setIsGoogleLoginEnabled] = useState(false); // Temporarily disable Google login
+  const navigate = useNavigate();
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login submitted:', { loginEmail, loginPassword });
     setLoginMessage('Logging in...');
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -29,21 +30,24 @@ function Login(props) {
           password: loginPassword
         })
       });
+      
       const data = await response.json();
+      
       if (response.ok) {
-        console.log('Login success:', data.message);
         setLoginMessage('Login successful!');
-        // Store the token and role
+        
+        // Store auth data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', loginEmail);
         localStorage.setItem('role', data.role);
 
-        if (props.onLoginSuccess) {
-          props.onLoginSuccess(loginEmail, data.role);
-        }
+        // Update parent component
+        onLoginSuccess(data.token, data.role, loginEmail);
+
+        // Redirect based on role
+        navigate(data.role === 'admin' ? '/admin' : '/');
       } else {
-        console.log('Login error:', data.message);
-        setLoginMessage(data.message);
+        setLoginMessage(data.message || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Error logging in:', error);
@@ -109,9 +113,8 @@ function Login(props) {
           localStorage.setItem('token', data.token);  // Use server generated token
           localStorage.setItem('role', data.role);    // Store role from server
           
-          if (props.onLoginSuccess) {
-            props.onLoginSuccess(data.email, data.role);
-          }
+          // Update parent component
+          onLoginSuccess(data.token, data.role, data.email);
           
           setLoginMessage("Google login successful!");
         } else {
