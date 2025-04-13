@@ -1,77 +1,164 @@
-import { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { categories, itemToCategory, itemUnits } from './categories';
 import './Results.css';
 
 function Results() {
-  const location = useLocation();
-  const data = location.state?.data || [];
-  const [expandedCategories, setExpandedCategories] = useState({});
-  const [groupedData, setGroupedData] = useState({});
-  const [filteredData, setFilteredData] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [data, setData] = useState([]);
   const [filterQuery, setFilterQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showUnitPrice, setShowUnitPrice] = useState(false);
-  
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending', storeIndex: null });
+  const [addedToCart, setAddedToCart] = useState({});
+  const [cartQuantities, setCartQuantities] = useState({});
+  const location = useLocation();
+
   useEffect(() => {
-    // Initialize all categories as expanded
-    const initialExpandState = {};
+    if (location.state?.data) {
+      setData(location.state.data);
+      initializeCategories();
+    }
+  }, [location]);
+
+  useEffect(() => {
+    loadCartQuantities();
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
+  }, []);
+
+  const initializeCategories = () => {
+    const expanded = {};
     Object.keys(categories).forEach(cat => {
-      initialExpandState[cat] = true;
+      expanded[cat] = true;
     });
-    setExpandedCategories(initialExpandState);
-    
-    // Group data by category
-    const grouped = {};
-    data.forEach((entry) => {
-      const category = itemToCategory[entry.item] || 'Other';
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(entry);
-    });
-    setGroupedData(grouped);
-    setFilteredData(grouped);
-  }, [data]);
-  
-  // Calculate average price for an item across all stores
-  const calculateAverage = (prices) => {
-    const validPrices = Object.values(prices).filter(price => price !== 'N/A');
-    if (validPrices.length === 0) return 0;
-    return validPrices.reduce((sum, price) => sum + parseFloat(price), 0) / validPrices.length;
+    setExpandedCategories(expanded);
   };
-  
-  // Find the cheapest store for an item
-  const findCheapestStore = (prices) => {
-    let cheapestStore = null;
-    let lowestPrice = Infinity;
-    
-    Object.entries(prices).forEach(([store, price]) => {
-      if (price !== 'N/A' && parseFloat(price) < lowestPrice) {
-        lowestPrice = parseFloat(price);
-        cheapestStore = store;
-      }
-    });
-    
-    return cheapestStore;
+
+  const handleCartUpdate = (event) => {
+    if (event.detail?.cartItems) {
+      updateCartQuantities(event.detail.cartItems);
+    } else {
+      loadCartQuantities();
+    }
   };
-  
-  // Find the cheapest store for a category
-  const findCheapestStoreForCategory = (categoryItems) => {
-    const storeTotals = {};
-    const storeCount = {};
-    
-    categoryItems.forEach(item => {
-      Object.entries(item.prices).forEach(([store, price]) => {
-        if (price !== 'N/A') {
-          if (!storeTotals[store]) {
-            storeTotals[store] = 0;
-            storeCount[store] = 0;
-          }
-          storeTotals[store] += parseFloat(price);
-          storeCount[store]++;
+
+  const loadCartQuantities = () => {
+    try {
+      const savedCart = localStorage.getItem('cartItems_v2');
+      if (savedCart) {
+        updateCartQuantities(JSON.parse(savedCart));
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    }
+  };
+
+  const updateCartQuantities = (cartItems) => {
+    const quantities = {};
+    cartItems.forEach(item => {
+      quantities[`${item.item}-${item.store}`] = item.quantity;
+    });
+    setCartQuantities(quantities);
+  };
+
+  const addToCart = (item, store, price) => {
+    const itemId = `${item}-${store}`;
+    try {
+      const savedCart = localStorage.getItem('cartItems_v2');
+      let cartItems = savedCart ? JSON.parse(savedCart) : [];
+      
+      const existingIndex = cartItems.findIndex(i => i.id === itemId);
+      if (existingIndex >= 0) {
+        cartItems[existingIndex].quantity += 1;
+      } else {
+        cartItems.push({
+          id: itemId,
+          item: item,
+          store: store,
+          price: price,
+          quantity: 1,
+          image: '/placeholder-grocery.jpg'
+        });
+      }
+
+      localStorage.setItem('cartItems_v2', JSON.stringify(cartItems));
+      updateCartQuantities(cartItems);
+      
+      setAddedToCart(prev => ({ ...prev, [itemId]: true }));
+      setTimeout(() => {
+        setAddedToCart(prev => ({ ...prev, [itemId]: false }));
+      }, 1500);
+
+      window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cartItems } }));
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  const updateQuantity = (item, store, price, newQuantity) => {
+    if (newQuantity < 0) return;
+
+    const itemId = `${item}-${store}`;
+    try {
+      const savedCart = localStorage.getItem('cartItems_v2');
+      let cartItems = savedCart ? JSON.parse(savedCart) : [];
+      
+      if (newQuantity === 0) {
+        cartItems = cartItems.filter(i => i.id !== itemId);
+      } else {
+        const existingIndex = cartItems.findIndex(i => i.id === itemId);
+        if (existingIndex >= 0) {
+          cartItems[existingIndex].quantity = newQuantity;
+        } else {
+          cartItems.push({
+            id: itemId,
+            item: item,
+            store: store,
+            price: price,
+            quantity: newQuantity,
+            image: '/placeholder-grocery.jpg'
+          });
         }
+      }
+
+      localStorage.setItem('cartItems_v2', JSON.stringify(cartItems));
+      updateCartQuantities(cartItems);
+      window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cartItems } }));
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
+  };
+
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const requestSort = (key, storeIndex = null) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.storeIndex === storeIndex) {
+      direction = sortConfig.direction === 'ascending' ? 'descending' : 'ascending';
+    }
+    setSortConfig({ key, direction, storeIndex });
+  };
+
+  const findCheapestStoreForCategory = (items) => {
+    if (!items || items.length === 0) return { store: null, average: 0 };
+    
+    const storeTotals = {};
+    const storeCounts = {};
+    
+    items.forEach(item => {
+      Object.entries(item.prices).forEach(([store, price]) => {
+        if (!storeTotals[store]) {
+          storeTotals[store] = 0;
+          storeCounts[store] = 0;
+        }
+        storeTotals[store] += parseFloat(price);
+        storeCounts[store]++;
       });
     });
     
@@ -79,88 +166,50 @@ function Results() {
     let lowestAverage = Infinity;
     
     Object.entries(storeTotals).forEach(([store, total]) => {
-      const average = total / storeCount[store];
+      const average = total / storeCounts[store];
       if (average < lowestAverage) {
         lowestAverage = average;
         cheapestStore = store;
       }
     });
     
-    return { store: cheapestStore, average: lowestAverage.toFixed(2) };
+    return {
+      store: cheapestStore,
+      average: lowestAverage.toFixed(2)
+    };
   };
-  
-  // Toggle category expansion
-  const toggleCategory = (category) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-  
-  // Sort data by column
-  const requestSort = (key, storeIndex = null) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    
-    setSortConfig({ key, direction, storeIndex });
-    
-    // Create a copy of the grouped data
-    const sortedData = { ...filteredData };
-    
-    // Sort each category's data
-    Object.keys(sortedData).forEach(category => {
-      sortedData[category] = [...sortedData[category]].sort((a, b) => {
-        if (key === 'item') {
-          return direction === 'ascending' 
-            ? a.item.localeCompare(b.item)
-            : b.item.localeCompare(a.item);
-        } else if (key === 'store') {
-          const storeA = Object.values(a.prices)[storeIndex] || 'N/A';
-          const storeB = Object.values(b.prices)[storeIndex] || 'N/A';
-          
-          if (storeA === 'N/A') return direction === 'ascending' ? 1 : -1;
-          if (storeB === 'N/A') return direction === 'ascending' ? -1 : 1;
-          
-          return direction === 'ascending'
-            ? parseFloat(storeA) - parseFloat(storeB)
-            : parseFloat(storeB) - parseFloat(storeA);
-        }
-        return 0;
-      });
+
+  const filteredData = React.useMemo(() => {
+    const result = {};
+    Object.keys(categories).forEach(category => {
+      result[category] = data
+        .filter(item => categories[category].includes(item.item))
+        .filter(item => 
+          item.item.toLowerCase().includes(filterQuery.toLowerCase()) ||
+          Object.entries(item.prices).some(([store, price]) => 
+            store.toLowerCase().includes(filterQuery.toLowerCase()) ||
+            price.toString().includes(filterQuery)
+          )
+        )
+        .sort((a, b) => {
+          if (sortConfig.key === 'item') {
+            return sortConfig.direction === 'ascending' 
+              ? a.item.localeCompare(b.item)
+              : b.item.localeCompare(a.item);
+          }
+          if (sortConfig.key === 'store' && sortConfig.storeIndex !== null) {
+            const stores = Object.keys(a.prices);
+            const store = stores[sortConfig.storeIndex];
+            return sortConfig.direction === 'ascending'
+              ? parseFloat(a.prices[store]) - parseFloat(b.prices[store])
+              : parseFloat(b.prices[store]) - parseFloat(a.prices[store]);
+          }
+          return 0;
+        });
     });
-    
-    setFilteredData(sortedData);
-  };
-  
-  // Filter data based on search query and category
-  const handleFilter = () => {
-    if (!filterQuery && selectedCategory === 'All') {
-      setFilteredData(groupedData);
-      return;
-    }
-    
-    const filtered = {};
-    
-    Object.keys(groupedData).forEach(category => {
-      if (selectedCategory !== 'All' && category !== selectedCategory) {
-        return;
-      }
-      
-      filtered[category] = groupedData[category].filter(entry => {
-        return entry.item.toLowerCase().includes(filterQuery.toLowerCase());
-      });
-    });
-    
-    setFilteredData(filtered);
-  };
-  
-  useEffect(() => {
-    handleFilter();
-  }, [filterQuery, selectedCategory, groupedData]);
-  
-  // Get sorting indicator
+    return result;
+  }, [data, filterQuery, sortConfig]);
+
   const getSortIndicator = (key, storeIndex = null) => {
     if (sortConfig.key !== key || (key === 'store' && sortConfig.storeIndex !== storeIndex)) {
       return '⇵';
@@ -168,15 +217,32 @@ function Results() {
     return sortConfig.direction === 'ascending' ? '↑' : '↓';
   };
 
-  if (data.length === 0) {
-    return <p>No data available. Please try searching again.</p>;
+  const findCheapestStore = (prices) => {
+    let cheapestStore = null;
+    let lowestPrice = Infinity;
+    
+    Object.entries(prices).forEach(([store, price]) => {
+      if (price !== 'N/A') {
+        const priceNum = parseFloat(price);
+        if (priceNum < lowestPrice) {
+          lowestPrice = priceNum;
+          cheapestStore = store;
+        }
+      }
+    });
+    
+    return { store: cheapestStore, price: lowestPrice };
+  };
+
+  if (!data.length) {
+    return <div className="no-results">No data available. Please try searching again.</div>;
   }
 
   const stores = data.length > 0 ? Object.keys(data[0].prices) : [];
 
   return (
     <div className="results-container">
-      <Link to="/" className="back-link">Back to Search</Link>
+      <Link to="/" className="back-link">← Back to Search</Link>
       <h2>Grocery Prices Comparison</h2>
       
       <div className="results-controls">
@@ -247,14 +313,14 @@ function Results() {
         const cheapestStoreInfo = findCheapestStoreForCategory(filteredData[category] || []);
         
         return (
-        <div key={category} className="category-section">
+          <div key={category} className="category-section">
             <div className="category-header">
-          <h3
+              <h3
                 onClick={() => toggleCategory(category)}
                 className="clickable"
-          >
+              >
                 {category} {expandedCategories[category] ? '▼' : '▶'}
-          </h3>
+              </h3>
               {cheapestStoreInfo.store && (
                 <div className="best-store-tag">
                   Best Store: <span className="best-store">{cheapestStoreInfo.store}</span> 
@@ -265,54 +331,79 @@ function Results() {
             
             {expandedCategories[category] && (
               <div className="category-content">
-            <table className="results-table">
-              <thead>
-                <tr>
-                      <th onClick={() => requestSort('item')}>
-                        Item {getSortIndicator('item')}
-                      </th>
-                      {showUnitPrice && <th>Unit</th>}
-                      {stores.map((store, index) => (
-                        <th key={store} onClick={() => requestSort('store', index)}>
-                          {store} {getSortIndicator('store', index)}
-                        </th>
-                  ))}
-                      <th>Best Deal</th>
-                </tr>
-              </thead>
-              <tbody>
-                    {filteredData[category]?.map((entry, index) => {
-                      const cheapestStore = findCheapestStore(entry.prices);
-                      
-                      return (
-                  <tr key={index}>
-                          <td className="item-name">{entry.item}</td>
-                          {showUnitPrice && <td>{itemUnits[entry.item] || 'each'}</td>}
-                          {stores.map((store) => {
-                            const isCheapest = store === cheapestStore;
+                <div className="items-grid">
+                  {filteredData[category]?.map(item => {
+                    const cheapestPrice = findCheapestStore(item.prices);
+                    
+                    return (
+                      <div key={item.item} className="item-card">
+                        <div className="item-header">
+                          <h4>{(item.item || '').split(' ').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                          ).join(' ')}</h4>
+                          {showUnitPrice && <span className="unit">per unit</span>}
+                        </div>
+                        <div className="store-prices">
+                          {Object.entries(item.prices).map(([store, price]) => {
+                            const itemId = `${item.item}-${store}`;
+                            const quantity = cartQuantities[itemId] || 0;
+                            const priceNum = parseFloat(price);
+                            const isAvailable = !isNaN(priceNum) && price !== 'N/A';
+                            const isCheapest = isAvailable && store === cheapestPrice.store;
+
                             return (
-                              <td 
-                                key={store}
-                                className={isCheapest ? 'best-price' : ''}
-                              >
-                                {entry.prices[store] !== 'N/A' ? `$${entry.prices[store]}` : 'N/A'}
-                              </td>
+                              <div key={store} className={`store-price ${isCheapest ? 'best-price' : ''}`}>
+                                <div className="store-price-row">
+                                  <div className="store-info-container">
+                                    <div className="store-info">
+                                      <span className="store-name">{store}</span>
+                                      {isAvailable && (
+                                        <span className="price">
+                                          ${priceNum.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {isCheapest && isAvailable && (
+                                      <span className="best-price-tag">Best Price</span>
+                                    )}
+                                  </div>
+                                  {isAvailable ? (
+                                    quantity > 0 ? (
+                                      <div className="quantity-controls">
+                                        <button 
+                                          onClick={() => updateQuantity(item.item, store, priceNum, quantity - 1)}
+                                          className="quantity-btn"
+                                        >
+                                          −
+                                        </button>
+                                        <span className="quantity">{quantity}</span>
+                                        <button 
+                                          onClick={() => updateQuantity(item.item, store, priceNum, quantity + 1)}
+                                          className="quantity-btn"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        className={`add-to-cart-btn ${addedToCart[itemId] ? 'added' : ''}`}
+                                        onClick={() => addToCart(item.item, store, priceNum)}
+                                      >
+                                        Add to Cart
+                                      </button>
+                                    )
+                                  ) : (
+                                    <span className="not-available">Not Available</span>
+                                  )}
+                                </div>
+                              </div>
                             );
                           })}
-                          <td>
-                            {cheapestStore ? (
-                              <span className="best-deal-tag">
-                                {cheapestStore} ${entry.prices[cheapestStore]}
-                              </span>
-                            ) : (
-                              'N/A'
-                            )}
-                          </td>
-                  </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

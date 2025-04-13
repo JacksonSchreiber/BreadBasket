@@ -9,6 +9,12 @@ from functools import wraps
 import jwt
 import datetime
 import os
+import openai
+from dotenv import load_dotenv
+import json
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -16,6 +22,87 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a secure sec
 DATABASE = 'users.db'
 
 MAIN_ADMIN_EMAIL = 'breadbasket.devs@gmail.com'
+
+# Initialize OpenAI client with API key from environment variable
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+openai.api_key = openai_api_key
+
+# Bready's system prompt
+SYSTEM_PROMPT = """
+You are Bready, a friendly and helpful grocery shopping assistant.
+Your personality traits:
+- Warm and approachable
+- Knowledgeable about groceries and recipes
+- Proactive in suggesting items and meal ideas
+- Mindful of budgets and preferences
+- Patient and understanding
+- Empathetic to shopping needs
+
+Your communication style:
+- Use emojis sparingly to add warmth
+- Keep responses concise but informative
+- Ask clarifying questions when needed
+- Provide clear, actionable suggestions
+- Maintain a helpful but professional tone
+
+Your capabilities:
+- Find and compare grocery items
+- Generate recipes based on ingredients
+- Check store availability and prices
+- Help with meal planning
+- Provide budget-friendly suggestions
+- Answer questions about products
+
+Remember to:
+- Always maintain a helpful and positive attitude
+- Be proactive in offering assistance
+- Consider the user's context and history
+- Provide clear and actionable information
+"""
+
+# Define available functions
+FUNCTIONS = [
+    {
+        "name": "get_recipe",
+        "description": "Get a recipe based on user's request",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "dish": {
+                    "type": "string",
+                    "description": "The name of the dish to get a recipe for"
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of available ingredients"
+                }
+            },
+            "required": ["dish"]
+        }
+    },
+    {
+        "name": "compare_prices",
+        "description": "Compare prices of items across different stores",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of items to compare prices for"
+                }
+            },
+            "required": ["items"]
+        }
+    }
+]
 
 def get_db():
     if 'db' not in g:
@@ -445,6 +532,113 @@ def update_user_profile(current_user):
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({'status': 'ok'}), 200
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        # Get user input and chat history
+        user_input = request.json["message"]
+        history = request.json.get("history", [])
+        
+        # Prepare messages with system prompt
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages += history
+        messages.append({"role": "user", "content": user_input})
+        
+        # First call to determine if a function should be called
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            functions=FUNCTIONS,
+            function_call="auto",
+            temperature=0.7
+        )
+        
+        response_message = response.choices[0].message
+        
+        # Check if a function should be called
+        if response_message.get("function_call"):
+            function_name = response_message["function_call"]["name"]
+            function_args = json.loads(response_message["function_call"]["arguments"])
+            
+            # Call the appropriate function
+            if function_name == "get_recipe":
+                function_response = get_recipe(**function_args)
+            elif function_name == "compare_prices":
+                function_response = compare_prices(**function_args)
+            else:
+                function_response = None
+            
+            # Add function response to messages
+            messages.append(response_message)
+            messages.append({
+                "role": "function",
+                "name": function_name,
+                "content": json.dumps(function_response)
+            })
+            
+            # Get final response from GPT
+            final_response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=messages,
+                temperature=0.7
+            )
+            
+            assistant_response = final_response.choices[0].message["content"]
+        else:
+            assistant_response = response_message["content"]
+        
+        return jsonify({
+            "response": assistant_response,
+            "status": "success"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "response": "I'm sorry, I encountered an error. Please try again.",
+            "status": "error",
+            "error": str(e)
+        }), 500
+
+def get_recipe(dish, ingredients=None):
+    # This is a mock implementation - replace with actual recipe database
+    recipes = {
+        "pizza": {
+            "ingredients": ["dough", "tomato sauce", "cheese", "toppings"],
+            "instructions": [
+                "Preheat oven to 450°F",
+                "Roll out the dough",
+                "Spread sauce and add toppings",
+                "Bake for 15-20 minutes"
+            ]
+        },
+        "pasta": {
+            "ingredients": ["pasta", "sauce", "cheese"],
+            "instructions": [
+                "Boil pasta",
+                "Heat sauce",
+                "Combine and serve"
+            ]
+        }
+    }
+    
+    if dish.lower() in recipes:
+        return recipes[dish.lower()]
+    return None
+
+def compare_prices(items):
+    # This is a mock implementation - replace with actual price database
+    prices = {
+        "milk": {"Walmart": 2.99, "Target": 3.29, "Kroger": 3.19},
+        "bread": {"Walmart": 1.99, "Target": 2.29, "Kroger": 2.19},
+        "eggs": {"Walmart": 2.49, "Target": 2.79, "Kroger": 2.69}
+    }
+    
+    results = {}
+    for item in items:
+        if item.lower() in prices:
+            results[item] = prices[item.lower()]
+    return results
 
 if __name__ == '__main__':
     app.run(debug=True)
