@@ -25,6 +25,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+backend/api_secrets.py
 
 # Node
 node_modules/
