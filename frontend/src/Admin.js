@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Admin.css';
 
-const API_URL = 'http://127.0.0.1:5002';
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5002';
 
 function Admin() {
   const [submissions, setSubmissions] = useState([]);
@@ -18,6 +18,9 @@ function Admin() {
   }, [filter]);
 
   const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
@@ -25,28 +28,48 @@ function Admin() {
     }
 
     try {
+      // First verify the token is still valid
+      const verifyResponse = await fetch(`${API_URL}/verify-token`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error('Token verification failed');
+      }
+
       // Fetch both submissions and users
       const [submissionsResponse, usersResponse] = await Promise.all([
         fetch(`${API_URL}/admin/contact-submissions?filter=${filter}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }),
         fetch(`${API_URL}/admin/users`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         })
       ]);
 
-      if (!submissionsResponse.ok || !usersResponse.ok) {
-        if (submissionsResponse.status === 401 || usersResponse.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          navigate('/login');
-          return;
-        }
-        throw new Error('Failed to fetch data');
+      // Check for specific error cases
+      if (submissionsResponse.status === 401 || usersResponse.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
+        navigate('/login');
+        throw new Error('Session expired. Please login again.');
+      }
+
+      if (!submissionsResponse.ok) {
+        throw new Error(`Failed to fetch submissions: ${submissionsResponse.statusText}`);
+      }
+
+      if (!usersResponse.ok) {
+        throw new Error(`Failed to fetch users: ${usersResponse.statusText}`);
       }
 
       const [submissionsData, usersData] = await Promise.all([
@@ -56,9 +79,17 @@ function Admin() {
 
       setSubmissions(submissionsData);
       setUsers(usersData);
-      setLoading(false);
+      setError(null);
     } catch (err) {
-      setError('Failed to fetch data');
+      console.error('Error in Admin:', err);
+      setError(err.message || 'Failed to fetch data. Please try again.');
+      
+      // Handle specific error cases
+      if (err.message.includes('Token verification failed') || 
+          err.message.includes('Session expired')) {
+        navigate('/login');
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -175,8 +206,26 @@ function Admin() {
     }
   };
 
-  if (loading) return <div className="admin-loading">Loading...</div>;
-  if (error) return <div className="admin-error">{error}</div>;
+  if (loading) {
+    return (
+      <div className="admin-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading admin data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="admin-error">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button onClick={fetchData} className="retry-button">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">

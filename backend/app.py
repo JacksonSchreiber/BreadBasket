@@ -12,6 +12,7 @@ import os
 import openai
 from dotenv import load_dotenv
 import json
+from flask_cors import cross_origin
 
 # Load environment variables from .env file
 load_dotenv()
@@ -138,15 +139,19 @@ def create_contact_submission(name, email, message):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(' ')[1]
+        
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
+        
         try:
-            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             current_user = data['user']
         except:
             return jsonify({'message': 'Token is invalid'}), 401
+        
         return f(current_user, *args, **kwargs)
     return decorated
 
@@ -639,6 +644,38 @@ def compare_prices(items):
         if item.lower() in prices:
             results[item] = prices[item.lower()]
     return results
+
+@app.route('/verify-token', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def verify_token():
+    if request.method == 'OPTIONS':
+        return handle_options()
+
+    token = None
+    if 'Authorization' in request.headers:
+        token = request.headers['Authorization'].split(' ')[1]
+    
+    if not token:
+        return jsonify({'message': 'Token is missing'}), 401
+    
+    try:
+        data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        db = get_db()
+        cursor = db.execute('SELECT email, role FROM users WHERE email = ?', (data['user'],))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({'message': 'User not found'}), 401
+            
+        return jsonify({
+            'valid': True,
+            'user': {
+                'email': user['email'],
+                'role': user['role']
+            }
+        })
+    except:
+        return jsonify({'message': 'Token is invalid'}), 401
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import ChatInput from './ChatInput';
-import { ShoppingAgent } from 'langchain_engine';
+import { ShoppingAgent } from '../langchain_engine';
 
 // Sound effects
 const messageSound = new Audio('/sounds/message.mp3');
@@ -365,9 +365,9 @@ const Chat: React.FC = () => {
           timestamp: Date.now()
         }
       ]);
-
       if (isListening) {
-        shoppingAgent.current.voice.speak(response);
+        shoppingAgent.current.start_voice_interaction();
+        shoppingAgent.current.process_message(response);
       }
     } catch (error) {
       console.error('Error processing message:', error);
