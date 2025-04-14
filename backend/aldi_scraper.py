@@ -54,35 +54,80 @@ def generate_consistent_price(item, store_id="aldi"):
     return price
 
 def direct_api_attempt(item, zip_code):
-    """Attempt to get the price directly from an API endpoint"""
+    """
+    Use Aldi's API to: 
+    1. list stores close to a zip code to get the store ID
+    2. Query an item from a specific store to get the price
+    """
+    store_id = ""
+    item_price = ""
+    # First, Get the store ID of the closest Aldi to the provided zip code using Aldi's merchant-search endpoint
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'application/json'
         }
-        # Try to use Instacart's API for Aldi prices
-        url = f"https://www.instacart.com/api/v3/containers/retailers/5/container/aisles/items/item?item_name={item}&zip_code={zip_code}"
-        response = requests.get(url, headers=headers, timeout=3)
-        
+
+        locationAPI = (
+            f"https://api.aldi.us/v1/merchant-search?"
+            f"currency=USD&service_type=pickup&zip_code={zip_code}"
+        )        
+        response = requests.get(locationAPI, headers=headers, timeout=3)
         if response.status_code == 200:
+            logger.info(f"response direct 200  ")
+
             data = response.json()
-            # Parse the response to find price information
-            if 'container' in data and 'modules' in data['container']:
-                for module in data['container']['modules']:
-                    if 'items' in module:
-                        for product in module['items']:
-                            if item.lower() in product['name'].lower():
-                                price = product.get('price', {}).get('amount', None)
-                                if price:
-                                    return {
-                                        "title": product['name'],
-                                        "price": str(price)
-                                    }
-        return None
+            stores = data.get('data', [])
+            # Parse the response to get the first listed store ID (closest store to the provided zip code)
+            if stores:
+                store_id = stores[0].get('id', '')
+                logger.info(f"Found store_id: {store_id}")
+        else:
+            logger.warning("No stores found in response")
+            return None
     except Exception as e:
-        logger.warning(f"Direct API attempt failed: {str(e)}")
+        logger.warning(f"Failed to query Aldi's merchant-search api: {str(e)}")
         return None
 
+    # Now, query an item using Aldi's product-search endpoint
+    try:
+        # headers not required, but keeping
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json'
+        }
+
+        #sorted by relevance
+        itemAPI = (
+            f"https://api.aldi.us/v3/product-search?"
+            f"currency=USD&serviceType=pickup&"
+            f"q={item}&"
+            f"limit=12&offset=0&sort=relevance&testVariant=A&servicePoint={store_id}"
+        )        
+        response = requests.get(itemAPI, headers=headers, timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            items = data.get('data', [])
+            # Parse the response to get the first (most relevant) item's price
+            if items:
+                first_item = items[0]
+                price_info = first_item.get('price', {})
+                item_price = price_info.get('amountRelevantDisplay', '')
+                logger.info(f"Found item_price: {item_price}")
+        else:
+            logger.warning("No items found in product-search response")
+            return None
+    except Exception as e:
+        logger.warning(f"Failed to query Aldi's product-search api: {str(e)}")
+        return None
+
+    # strip the leading $
+    return {
+            "title": item,
+            "price": str(item_price).lstrip('$')
+            }
+
+    
 def get_aldi_price(item, zip_code):
     """Get the price of an item at Aldi"""
     cache_key = f"{zip_code}_{item}"
@@ -97,18 +142,21 @@ def get_aldi_price(item, zip_code):
     api_result = direct_api_attempt(item, zip_code)
     if api_result:
         price_cache[cache_key] = (time.time(), api_result)
+        logger.info(f"Direct worked!  ")
         return api_result
-    
+    else:
+        return "error"
+    """
     # Use consistent generated price as fallback
     price = generate_consistent_price(item)
     result = {
         "title": item.title(),
         "price": str(price)
     }
-    
     # Cache the result
     price_cache[cache_key] = (time.time(), result)
     return result
+    """
 
 @app.route('/api/aldi', methods=['POST', 'OPTIONS'])
 def get_aldi_prices():
@@ -132,7 +180,8 @@ def get_aldi_prices():
         return jsonify({"product_data": result}), 200
     except Exception as e:
         logger.error(f"Error getting price: {str(e)}")
-        
+        return "error", 500
+        """
         # Always return a result, even if there's an error
         fallback_price = generate_consistent_price(item)
         return jsonify({
@@ -141,6 +190,7 @@ def get_aldi_prices():
                 "price": str(fallback_price)
             }
         }), 200
+        """
 
 def clear_cache():
     """Clear expired cache entries"""
