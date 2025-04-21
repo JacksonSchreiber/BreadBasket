@@ -1,0 +1,110 @@
+.legal-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 2rem 1rem;
+}
+
+.legal-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.legal-content h1 {
+  color: #166534;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.last-updated {
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 0.95rem;
+}
+
+.legal-content section {
+  margin-bottom: 2.5rem;
+}
+
+.legal-content h2 {
+  color: #166534;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.legal-content h3 {
+  color: #334155;
+  font-size: 1.25rem;
+  margin: 1.5rem 0 1rem;
+  font-weight: 500;
+}
+
+.legal-content p {
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+.legal-content ul {
+  list-style-type: disc;
+  padding-left: 2rem;
+  margin: 1rem 0;
+}
+
+.legal-content li {
+  color: #334155;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  font-size: 1.05rem;
+}
+
+.contact-info {
+  color: #16a34a;
+  font-weight: 500;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .legal-content {
+    padding: 2rem;
+  }
+
+  .legal-content h1 {
+    font-size: 2rem;
+  }
+
+  .legal-content h2 {
+    font-size: 1.35rem;
+  }
+
+  .legal-content h3 {
+    font-size: 1.15rem;
+  }
+
+  .legal-content p,
+  .legal-content li {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .legal-container {
+    padding: 1rem;
+  }
+
+  .legal-content {
+    padding: 1.5rem;
+  }
+
+  .legal-content h1 {
+    font-size: 1.75rem;
+  }
+} 

@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
-import VoiceButton from './VoiceButton';
 
 const InputContainer = styled.div`
   display: flex;
@@ -53,45 +52,23 @@ const SendButton = styled.button`
   }
 `;
 
-const VoiceStatus = styled.div<{ isListening: boolean }>`
-  font-size: 14px;
-  color: ${props => props.isListening ? '#ff4b4b' : '#666'};
-  margin-left: 8px;
-  opacity: ${props => props.isListening ? 1 : 0};
-  transition: opacity 0.3s ease;
-`;
-
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
-  onStartVoice: () => void;
-  onStopVoice: () => void;
-  isListening: boolean;
-  audioLevel?: number;
   placeholder?: string;
   disabled?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
-  onStartVoice,
-  onStopVoice,
-  isListening,
-  audioLevel = 0,
-  placeholder = "Type a message or click the mic to speak...",
+  placeholder = "Type a message...",
   disabled = false
 }) => {
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [isSending, setIsSending] = useState(false);
 
-  useEffect(() => {
-    if (!isListening && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isListening]);
-
   const handleSubmit = async () => {
-    if (message.trim() || isListening) {
+    if (message.trim()) {
       setIsSending(true);
       await onSendMessage(message.trim());
       setMessage("");
@@ -114,23 +91,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
         placeholder={placeholder}
-        disabled={disabled || isListening}
+        disabled={disabled || isSending}
       />
-      
-      <VoiceButton
-        onStart={onStartVoice}
-        onStop={onStopVoice}
-        isListening={isListening}
-        audioLevel={audioLevel}
-      />
-      
-      <VoiceStatus isListening={isListening}>
-        {isListening ? 'Listening...' : ''}
-      </VoiceStatus>
 
       <SendButton
         onClick={handleSubmit}
-        disabled={disabled || isSending || (!message.trim() && !isListening)}
+        disabled={disabled || isSending || !message.trim()}
       >
         ➤
       </SendButton>

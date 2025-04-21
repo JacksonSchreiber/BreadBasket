@@ -177,16 +177,16 @@ const MessageStatus = styled.div<{
 `;
 
 const Avatar = styled.div<{ isUser: boolean }>`
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  margin: ${props => props.isUser ? '0 0 0 12px' : '0 12px 0 0'};
-  background: ${props => props.isUser ? '#007AFF' : '#E9ECEF'};
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 8px;
+  background: ${props => props.isUser ? '#007AFF' : '#F0F2F5'};
+  color: ${props => props.isUser ? 'white' : '#1C1E21'};
   font-size: 16px;
-  color: white;
 `;
 
 const TypingIndicator = styled.div`
@@ -295,10 +295,7 @@ const REACTION_EMOJIS = ['👍', '❤️', '😊', '🎉', '👏', '🥖'];
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isListening, setIsListening] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
-  const [activeReactionMessage, setActiveReactionMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const shoppingAgent = useRef<ShoppingAgent>(new ShoppingAgent());
 
@@ -306,7 +303,7 @@ const Chat: React.FC = () => {
     // Add welcome message
     setMessages([{
       id: 'welcome',
-      text: "Hi! I'm Bready, your shopping assistant. You can type or speak to me!",
+      text: "Hi! I'm Bready, your shopping assistant. How can I help you today?",
       isUser: false,
       timestamp: Date.now()
     }]);
@@ -330,8 +327,7 @@ const Chat: React.FC = () => {
       id: messageId,
       text,
       isUser: true,
-      timestamp: Date.now(),
-      status: 'sent'
+      timestamp: Date.now()
     };
 
     messageSound.play();
@@ -339,25 +335,10 @@ const Chat: React.FC = () => {
     setIsTyping(true);
 
     try {
-      setTimeout(() => {
-        deliveredSound.play();
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === messageId
-              ? { ...msg, status: 'delivered' as const }
-              : msg
-          )
-        );
-      }, 500);
-
       const response = await shoppingAgent.current.process_message(text);
 
       setMessages(prev => [
-        ...prev.map(msg => 
-          msg.id === messageId
-            ? { ...msg, status: 'read' as const }
-            : msg
-        ),
+        ...prev,
         {
           id: Date.now().toString(),
           text: response,
@@ -365,18 +346,10 @@ const Chat: React.FC = () => {
           timestamp: Date.now()
         }
       ]);
-      if (isListening) {
-        shoppingAgent.current.start_voice_interaction();
-        shoppingAgent.current.process_message(response);
-      }
     } catch (error) {
       console.error('Error processing message:', error);
       setMessages(prev => [
-        ...prev.map(msg => 
-          msg.id === messageId
-            ? { ...msg, status: 'error' as const }
-            : msg
-        ),
+        ...prev,
         {
           id: Date.now().toString(),
           text: "I'm sorry, I encountered an error. Please try again.",
@@ -387,50 +360,6 @@ const Chat: React.FC = () => {
     }
 
     setIsTyping(false);
-  };
-
-  const handleStartVoice = () => {
-    setIsListening(true);
-    shoppingAgent.current.start_voice_interaction();
-  };
-
-  const handleStopVoice = () => {
-    setIsListening(false);
-    shoppingAgent.current.stop_voice_interaction();
-  };
-
-  const handleAudioLevel = (level: number) => {
-    setAudioLevel(level);
-  };
-
-  const handleReaction = (messageId: string, emoji: string) => {
-    reactionSound.play();
-    setMessages(prev => 
-      prev.map(msg => {
-        if (msg.id === messageId) {
-          const reactions = msg.reactions || [];
-          const existingReaction = reactions.find(r => r.emoji === emoji);
-          
-          if (existingReaction) {
-            return {
-              ...msg,
-              reactions: reactions.map(r => 
-                r.emoji === emoji
-                  ? { ...r, count: r.count + 1, users: [...r.users, 'user'] }
-                  : r
-              )
-            };
-          } else {
-            return {
-              ...msg,
-              reactions: [...reactions, { emoji, count: 1, users: ['user'] }]
-            };
-          }
-        }
-        return msg;
-      })
-    );
-    setActiveReactionMessage(null);
   };
 
   return (
@@ -452,22 +381,9 @@ const Chat: React.FC = () => {
                 {!message.isUser && (
                   <ReactionButton
                     className="reaction-button"
-                    onClick={() => setActiveReactionMessage(message.id)}
                   >
                     😀
                   </ReactionButton>
-                )}
-                {activeReactionMessage === message.id && (
-                  <ReactionPopup>
-                    {REACTION_EMOJIS.map(emoji => (
-                      <ReactionEmoji
-                        key={emoji}
-                        onClick={() => handleReaction(message.id, emoji)}
-                      >
-                        {emoji}
-                      </ReactionEmoji>
-                    ))}
-                  </ReactionPopup>
                 )}
               </MessageContent>
               
@@ -507,14 +423,7 @@ const Chat: React.FC = () => {
         <div ref={messagesEndRef} />
       </MessagesContainer>
 
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        onStartVoice={handleStartVoice}
-        onStopVoice={handleStopVoice}
-        isListening={isListening}
-        audioLevel={audioLevel}
-        disabled={isTyping}
-      />
+      <ChatInput onSendMessage={handleSendMessage} isTyping={isTyping} />
     </Container>
   );
 };

@@ -1,0 +1,210 @@
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background-color: #f0fdf4;
+}
+
+.auth-box {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #166534;
+  margin-bottom: 0.75rem;
+  font-size: 2.75rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.subtitle {
+  color: #4b5563;
+  margin-bottom: 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+.auth-tabs {
+  display: flex;
+  margin: 0 auto 2.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+  max-width: 300px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #4b5563;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  color: #16a34a;
+  border-bottom-color: #16a34a;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+  width: 100%;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+input {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  transition: all 0.2s ease;
+  color: #1f2937;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+input:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+input::placeholder {
+  color: #9ca3af;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 1rem;
+  margin-top: 2rem;
+  background-color: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+}
+
+.message {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.message.error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.message.success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.terms {
+  margin-top: 2rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.link {
+  color: #16a34a;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.google-login {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.google-login p {
+  color: #4b5563;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .auth-box {
+    padding: 2rem 1.5rem;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .tab-button {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  input {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  .submit-button {
+    padding: 0.875rem;
+    font-size: 1rem;
+  }
+} 

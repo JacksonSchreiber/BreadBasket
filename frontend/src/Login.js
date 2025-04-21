@@ -2,89 +2,98 @@ import React, { useState } from 'react';
 import './App.css'; // Reusing App.css for consistent styling
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
 // Update API URL to match the backend port (5000)
 const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
 
 function Login({ onLoginSuccess }) {
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [regUsername, setRegUsername] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [loginMessage, setLoginMessage] = useState('');
-  const [registerMessage, setRegisterMessage] = useState('');
+  const [isLoginView, setIsLoginView] = useState(true);
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    email: '',
+    confirmPassword: ''
+  });
+  const [message, setMessage] = useState('');
   const [isGoogleLoginEnabled, setIsGoogleLoginEnabled] = useState(false); // Temporarily disable Google login
   const navigate = useNavigate();
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setLoginMessage('Logging in...');
+    setMessage('');
 
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: loginEmail,
-          password: loginPassword
+          username: formData.username,
+          password: formData.password
         })
       });
       
       const data = await response.json();
       
       if (response.ok) {
-        setLoginMessage('Login successful!');
-        
-        // Store auth data
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', loginEmail);
+        localStorage.setItem('user', formData.username);
         localStorage.setItem('role', data.role);
-
-        // Update parent component
-        onLoginSuccess(data.token, data.role, loginEmail);
-
-        // Redirect based on role
-        navigate(data.role === 'admin' ? '/admin' : '/');
+        onLoginSuccess(data.token, data.role, formData.username);
+        navigate('/');
       } else {
-        setLoginMessage(data.message || 'Login failed. Please try again.');
+        setMessage(data.message || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Error logging in:', error);
-      setLoginMessage('Error connecting to server. Please try again.');
+      setMessage('Error connecting to server. Please try again.');
     }
   };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    console.log('Registration submitted:', { regUsername, regEmail, regPassword });
-    setRegisterMessage('Registering...');
+    setMessage('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setMessage('Passwords do not match');
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: regUsername,
-          password: regPassword,
-          email: regEmail
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
         })
       });
+
       const data = await response.json();
+
       if (response.ok) {
-        console.log('Registration success:', data.message);
-        setRegisterMessage('Registration successful! You can now login.');
-        // Clear the registration form
-        setRegUsername('');
-        setRegEmail('');
-        setRegPassword('');
+        setMessage('Registration successful! Please log in.');
+        setIsLoginView(true);
+        setFormData(prev => ({
+          ...prev,
+          password: '',
+          confirmPassword: ''
+        }));
       } else {
-        console.log('Registration failed:', data.message);
-        setRegisterMessage(data.message || 'Registration failed. Please try again.');
+        setMessage(data.message || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      setRegisterMessage('Error connecting to server. Please try again.');
+      console.error('Error registering:', error);
+      setMessage('Error connecting to server. Please try again.');
     }
   };
 
@@ -116,99 +125,124 @@ function Login({ onLoginSuccess }) {
           // Update parent component
           onLoginSuccess(data.token, data.role, data.email);
           
-          setLoginMessage("Google login successful!");
+          setMessage("Google login successful!");
         } else {
-          setLoginMessage("Google login failed: " + data.message);
+          setMessage("Google login failed: " + data.message);
         }
       })
       .catch(error => {
         console.error("Error during Google login:", error);
-        setLoginMessage("Error connecting to server. Please try again.");
+        setMessage("Error connecting to server. Please try again.");
       });
   };
 
   const handleGoogleError = () => {
     console.log("❌ Google login failed");
-    setLoginMessage("Google login failed. Please try again.");
+    setMessage("Google login failed. Please try again.");
   };
 
   return (
     <div className="auth-container">
-      <h2>Login or Register</h2>
-      {loginMessage && <div className={loginMessage.includes('successful') ? 'success-message' : 'error-message'}>{loginMessage}</div>}
-      
-      <div className="auth-sections">
-        <div className="auth-section">
-          <h3>Login</h3>
-          <form onSubmit={handleLoginSubmit}>
-            <div className="form-group">
-              <label>Email:</label>
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Password:</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="auth-button">Login</button>
-          </form>
+      <div className="auth-box">
+        <h1>BreadBasket</h1>
+        <p className="subtitle">Your AI-powered shopping assistant</p>
 
-          <div className="google-login">
-            <p>Or login with Google:</p>
-            {isGoogleLoginEnabled ? (
-              <GoogleLogin
-                onSuccess={handleGoogleLogin}
-                onError={handleGoogleError}
-              />
-            ) : (
-              <div className="error-message">Google login temporarily unavailable</div>
-            )}
+        <div className="auth-tabs">
+          <button 
+            className={`tab-button ${isLoginView ? 'active' : ''}`}
+            onClick={() => setIsLoginView(true)}
+          >
+            Login
+          </button>
+          <button 
+            className={`tab-button ${!isLoginView ? 'active' : ''}`}
+            onClick={() => setIsLoginView(false)}
+          >
+            Register
+          </button>
+        </div>
+
+        {message && (
+          <div className={`message ${message.includes('successful') ? 'success' : 'error'}`}>
+            {message}
           </div>
-        </div>
+        )}
 
-        <div className="auth-section">
-          <h3>Register</h3>
-          {registerMessage && <div className={registerMessage.includes('successful') ? 'success-message' : 'error-message'}>{registerMessage}</div>}
-          <form onSubmit={handleRegisterSubmit}>
+        <form onSubmit={isLoginView ? handleLoginSubmit : handleRegisterSubmit}>
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              placeholder="Enter your username"
+              required
+            />
+          </div>
+
+          {!isLoginView && (
             <div className="form-group">
-              <label>Username:</label>
-              <input
-                type="text"
-                value={regUsername}
-                onChange={(e) => setRegUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Email:</label>
+              <label>Email</label>
               <input
                 type="email"
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Enter your email"
                 required
               />
             </div>
+          )}
+
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          {!isLoginView && (
             <div className="form-group">
-              <label>Password:</label>
+              <label>Confirm Password</label>
               <input
                 type="password"
-                value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                placeholder="••••••••"
                 required
               />
             </div>
-            <button type="submit" className="auth-button">Register</button>
-          </form>
-        </div>
+          )}
+
+          <button type="submit" className="submit-button">
+            {isLoginView ? 'Sign In' : 'Register'}
+          </button>
+        </form>
+
+        <p className="terms">
+          By using BreadBasket, you agree to our{' '}
+          <a href="/terms" className="link">Terms of Service</a> and{' '}
+          <a href="/privacy" className="link">Privacy Policy</a>.
+        </p>
+      </div>
+
+      <div className="google-login">
+        <p>Or login with Google:</p>
+        {isGoogleLoginEnabled ? (
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={handleGoogleError}
+          />
+        ) : (
+          <div className="error-message">Google login temporarily unavailable</div>
+        )}
       </div>
     </div>
   );
