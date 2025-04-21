@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { categories, itemToCategory, itemUnits } from './categories';
 import './Results.css';
 
 function Results() {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filterQuery, setFilterQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showUnitPrice, setShowUnitPrice] = useState(false);
@@ -13,13 +15,43 @@ function Results() {
   const [addedToCart, setAddedToCart] = useState({});
   const [cartQuantities, setCartQuantities] = useState({});
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (location.state?.data) {
-      setData(location.state.data);
-      initializeCategories();
-    }
-  }, [location]);
+    const fetchPriceData = async () => {
+      if (!location.state?.selectedItems || !location.state?.zipCode) {
+        navigate('/');
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Simulate fetching price data for each item
+        // In a real app, this would be an API call
+        const mockPriceData = location.state.selectedItems.map(item => ({
+          item,
+          prices: {
+            'Walmart': (Math.random() * 10 + 1).toFixed(2),
+            'Target': (Math.random() * 10 + 1).toFixed(2),
+            'Kroger': (Math.random() * 10 + 1).toFixed(2),
+            'Whole Foods': (Math.random() * 15 + 2).toFixed(2),
+          }
+        }));
+
+        setData(mockPriceData);
+        initializeCategories();
+      } catch (err) {
+        setError('Failed to fetch price data. Please try again.');
+        console.error('Error fetching price data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPriceData();
+  }, [location.state, navigate]);
 
   useEffect(() => {
     loadCartQuantities();
@@ -234,8 +266,31 @@ function Results() {
     return { store: cheapestStore, price: lowestPrice };
   };
 
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Fetching price data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+        <Link to="/" className="back-link">← Back to Search</Link>
+      </div>
+    );
+  }
+
   if (!data.length) {
-    return <div className="no-results">No data available. Please try searching again.</div>;
+    return (
+      <div className="no-results">
+        <p>No data available. Please try searching again.</p>
+        <Link to="/" className="back-link">← Back to Search</Link>
+      </div>
+    );
   }
 
   const stores = data.length > 0 ? Object.keys(data[0].prices) : [];
@@ -249,7 +304,7 @@ function Results() {
         <div className="filter-section">
           <input
             type="text"
-            placeholder="Search for items..."
+            placeholder="Search items, stores, or prices..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             className="filter-input"
@@ -273,35 +328,43 @@ function Results() {
                 checked={showUnitPrice}
                 onChange={() => setShowUnitPrice(!showUnitPrice)}
               />
-              Show Unit Prices
+              Unit Prices
             </label>
           </div>
           
-          <button 
-            className="expand-all-btn"
-            onClick={() => {
-              const allExpanded = {};
-              Object.keys(categories).forEach(cat => {
-                allExpanded[cat] = true;
-              });
-              setExpandedCategories(allExpanded);
-            }}
-          >
-            Expand All
-          </button>
-          
-          <button 
-            className="collapse-all-btn"
-            onClick={() => {
-              const allCollapsed = {};
-              Object.keys(categories).forEach(cat => {
-                allCollapsed[cat] = false;
-              });
-              setExpandedCategories(allCollapsed);
-            }}
-          >
-            Collapse All
-          </button>
+          <div className="control-buttons">
+            <button 
+              className="control-btn"
+              onClick={() => {
+                const allExpanded = {};
+                Object.keys(categories).forEach(cat => {
+                  allExpanded[cat] = true;
+                });
+                setExpandedCategories(allExpanded);
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M7 14l5-5 5 5z"/>
+              </svg>
+              Expand All
+            </button>
+            
+            <button 
+              className="control-btn"
+              onClick={() => {
+                const allCollapsed = {};
+                Object.keys(categories).forEach(cat => {
+                  allCollapsed[cat] = false;
+                });
+                setExpandedCategories(allCollapsed);
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+              Collapse All
+            </button>
+          </div>
         </div>
       </div>
       

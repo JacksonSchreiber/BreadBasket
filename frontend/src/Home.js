@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { allItems, categories } from './categories';
+import { allItems } from './categories';
 import StoreLogos from './StoreLogos';
 import './Home.css';
 
@@ -9,9 +9,6 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [showItemSelector, setShowItemSelector] = useState(false);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,37 +23,23 @@ function Home() {
         element.classList.add('visible');
       }, index * 150); // 150ms delay between each element
     });
-    
-    // Initialize selected categories
-    const initialCategoryState = {};
-    Object.keys(categories).forEach(category => {
-      initialCategoryState[category] = false;
-    });
-    setSelectedCategories(initialCategoryState);
   }, []);
 
   const handleZipCodeSubmit = async (event) => {
     event.preventDefault();
     
-    if (!showItemSelector) {
-      setShowItemSelector(true);
-      return;
-    }
-    
-    if (selectedItems.length === 0) {
-      setError('Please select at least one item to compare');
-      return;
-    }
-    
     setLoading(true);
     setError(null);
 
     try {
-      // Navigate to results with selected items
+      // Automatically select all items
+      // setSelectedItems(allItems);
+      
+      // Navigate to results with all items selected
       navigate('/results', { 
         state: { 
           zipCode,
-          selectedItems 
+          selectedItems: allItems 
         } 
       });
     } catch (err) {
@@ -65,54 +48,6 @@ function Home() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleItemSelection = (item) => {
-    setSelectedItems(prev => {
-      if (prev.includes(item)) {
-        return prev.filter(i => i !== item);
-      } else {
-        return [...prev, item];
-      }
-    });
-  };
-
-  const toggleCategory = (category) => {
-    setSelectedCategories(prev => {
-      const newState = { ...prev, [category]: !prev[category] };
-      
-      // Update selected items based on category selection
-      const categoryItems = categories[category];
-      setSelectedItems(prevItems => {
-        if (newState[category]) {
-          // Add all items from category if not already selected
-          return [...new Set([...prevItems, ...categoryItems])];
-        } else {
-          // Remove all items from this category
-          return prevItems.filter(item => !categoryItems.includes(item));
-        }
-      });
-      
-      return newState;
-    });
-  };
-
-  const selectAllItems = () => {
-    setSelectedItems(allItems);
-    const allSelected = {};
-    Object.keys(categories).forEach(category => {
-      allSelected[category] = true;
-    });
-    setSelectedCategories(allSelected);
-  };
-
-  const clearSelection = () => {
-    setSelectedItems([]);
-    const allCleared = {};
-    Object.keys(categories).forEach(category => {
-      allCleared[category] = false;
-    });
-    setSelectedCategories(allCleared);
   };
 
   return (
@@ -128,78 +63,32 @@ function Home() {
             Compare prices across multiple stores and save money on your groceries with our smart shopping assistant
           </p>
           {loggedIn ? (
-            <>
-              <form onSubmit={handleZipCodeSubmit} className="zip-form">
-                <input
-                  type="text"
-                  value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value)}
-                  placeholder="Enter your ZIP code"
-                  className="zip-input"
-                  pattern="[0-9]{5}"
-                  title="Please enter a valid 5-digit ZIP code"
-                  required
-                />
-                <button type="submit" className="cta-button" disabled={loading}>
-                  {loading ? (
-                    <span className="loading-text">
-                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : (
-                    showItemSelector ? 'Compare Prices' : 'Get Started'
-                  )}
-                </button>
-                {error && <p className="error-message">{error}</p>}
-              </form>
-              
-              {showItemSelector && (
-                <div className="item-selector scroll-fade-in">
-                  <h3>Select items to compare</h3>
-                  <div className="selection-controls">
-                    <button type="button" onClick={selectAllItems} className="select-btn">
-                      <span>Select All</span>
-                    </button>
-                    <button type="button" onClick={clearSelection} className="clear-btn">
-                      <span>Clear All</span>
-                    </button>
-                    <span className="items-count">{selectedItems.length} items selected</span>
-                  </div>
-                  
-                  <div className="categories-container">
-                    {Object.entries(categories).map(([category, items]) => (
-                      <div key={category} className="category-container">
-                        <div className="category-header">
-                          <label className="category-checkbox">
-                            <input 
-                              type="checkbox" 
-                              checked={selectedCategories[category] || false}
-                              onChange={() => toggleCategory(category)}
-                            />
-                            <span className="category-name">{category}</span>
-                          </label>
-                        </div>
-                        <div className="items-grid">
-                          {items.map(item => (
-                            <label key={item} className="item-checkbox">
-                              <input 
-                                type="checkbox"
-                                checked={selectedItems.includes(item)}
-                                onChange={() => toggleItemSelection(item)}
-                              />
-                              <span className="item-name">{item}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <form onSubmit={handleZipCodeSubmit} className="zip-form">
+              <input
+                type="text"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                placeholder="Enter your ZIP code"
+                className="zip-input"
+                pattern="[0-9]{5}"
+                title="Please enter a valid 5-digit ZIP code"
+                required
+              />
+              <button type="submit" className="cta-button" disabled={loading}>
+                {loading ? (
+                  <span className="loading-text">
+                    <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Processing...
+                  </span>
+                ) : (
+                  'Compare All Prices'
+                )}
+              </button>
+              {error && <p className="error-message">{error}</p>}
+            </form>
           ) : (
             <Link to="/login" className="cta-button">
               Get Started
