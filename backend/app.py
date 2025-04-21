@@ -648,6 +648,12 @@ def compare_prices(items):
             results[item] = prices[item.lower()]
     return results
 
+def handle_options():
+    response = jsonify({'status': 'success'})
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return response
+
 @app.route('/verify-token', methods=['GET', 'OPTIONS'])
 @cross_origin()
 def verify_token():
