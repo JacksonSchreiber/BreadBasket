@@ -3,6 +3,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { categories, itemToCategory, itemUnits } from './categories';
 import './Results.css';
 
+const ChevronIcon = ({ className }) => (
+  <svg 
+    className={className} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
 function Results() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +30,7 @@ function Results() {
   const [cartQuantities, setCartQuantities] = useState({});
   const location = useLocation();
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const fetchPriceData = async () => {
@@ -41,13 +56,13 @@ function Results() {
         }));
 
         setData(mockPriceData);
-        initializeCategories();
+      initializeCategories();
       } catch (err) {
         setError('Failed to fetch price data. Please try again.');
         console.error('Error fetching price data:', err);
       } finally {
         setLoading(false);
-      }
+    }
     };
 
     fetchPriceData();
@@ -266,19 +281,46 @@ function Results() {
     return { store: cheapestStore, price: lowestPrice };
   };
 
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (!isExpanded) {
+      // Expand all categories
+      const newExpandedCategories = {};
+      Object.keys(categories).forEach(category => {
+        newExpandedCategories[category] = true;
+      });
+      setExpandedCategories(newExpandedCategories);
+    } else {
+      // Collapse all categories
+      setExpandedCategories({});
+    }
+  };
+
+  const clearCart = () => {
+    localStorage.removeItem('cartItems');
+    setCartQuantities({});
+    // Dispatch event to update cart count in App.js
+    window.dispatchEvent(new CustomEvent('cartUpdated', {
+      detail: { cartItems: [] }
+    }));
+  };
+
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className="results-container loading">
         <div className="loading-spinner"></div>
-        <p>Fetching price data...</p>
+        <p>Loading results...</p>
+        <button onClick={clearCart} style={{marginTop: '20px'}}>Clear Cart</button>
+        <Link to="/" className="back-link">← Back to Search</Link>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="error-container">
-        <p className="error-message">{error}</p>
+      <div className="results-container error">
+        <p>Error: {error}</p>
+        <button onClick={clearCart} style={{marginTop: '20px'}}>Clear Cart</button>
         <Link to="/" className="back-link">← Back to Search</Link>
       </div>
     );
@@ -304,67 +346,28 @@ function Results() {
         <div className="filter-section">
           <input
             type="text"
-            placeholder="Search items, stores, or prices..."
+            className="filter-input"
+            placeholder="Search items..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="filter-input"
           />
-          
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
+          <select
             className="category-select"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <option value="All">All Categories</option>
+            <option value="All">Categories</option>
             {Object.keys(categories).map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          
-          <div className="toggle-container">
-            <label>
-              <input
-                type="checkbox"
-                checked={showUnitPrice}
-                onChange={() => setShowUnitPrice(!showUnitPrice)}
-              />
-              Unit Prices
-            </label>
-          </div>
-          
-          <div className="control-buttons">
-            <button 
-              className="control-btn"
-              onClick={() => {
-                const allExpanded = {};
-                Object.keys(categories).forEach(cat => {
-                  allExpanded[cat] = true;
-                });
-                setExpandedCategories(allExpanded);
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14">
-                <path fill="currentColor" d="M7 14l5-5 5 5z"/>
-              </svg>
-              Expand All
-            </button>
-            
-            <button 
-              className="control-btn"
-              onClick={() => {
-                const allCollapsed = {};
-                Object.keys(categories).forEach(cat => {
-                  allCollapsed[cat] = false;
-                });
-                setExpandedCategories(allCollapsed);
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14">
-                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
-              </svg>
-              Collapse All
-            </button>
-          </div>
+          <button 
+            className={`toggle-expand-btn ${isExpanded ? 'expanded' : ''}`}
+            onClick={toggleExpand}
+          >
+            <ChevronIcon />
+            {isExpanded ? 'Collapse All' : 'Expand All'}
+          </button>
         </div>
       </div>
       

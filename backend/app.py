@@ -13,13 +13,22 @@ import openai
 from dotenv import load_dotenv
 import json
 from flask_cors import cross_origin
+import secrets
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a secure secret key
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Generate a secure random secret key
+app.config['SECRET_KEY'] = secrets.token_hex(32)
 DATABASE = 'users.db'
 
 MAIN_ADMIN_EMAIL = 'breadbasket.devs@gmail.com'

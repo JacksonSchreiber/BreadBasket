@@ -165,18 +165,18 @@ function AppContent() {
           </nav>
           <div className="header-actions">
             {isAuthenticated && (
-              <button 
-                className="cart-button" 
-                onClick={() => setIsCartOpen(true)}
-                aria-label="Shopping Cart"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 22a1 1 0 100-2 1 1 0 000 2zM20 22a1 1 0 100-2 1 1 0 000 2zM1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"></path>
-                </svg>
-                {cartItemCount > 0 && (
-                  <span className="cart-count">{cartItemCount}</span>
-                )}
-              </button>
+            <button 
+              className="cart-button" 
+              onClick={() => setIsCartOpen(true)}
+              aria-label="Shopping Cart"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 22a1 1 0 100-2 1 1 0 000 2zM20 22a1 1 0 100-2 1 1 0 000 2zM1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"></path>
+              </svg>
+              {cartItemCount > 0 && (
+                <span className="cart-count">{cartItemCount}</span>
+              )}
+            </button>
             )}
             {loggedInUser && (
               <div className="welcome-container" ref={dropdownRef}>
@@ -258,11 +258,11 @@ function AppContent() {
       </main>
       {isAuthenticated && (
         <>
-          <ShoppingCart 
-            isOpen={isCartOpen} 
-            onClose={() => setIsCartOpen(false)} 
-          />
-          <BreadyChat />
+      <ShoppingCart 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+      />
+      <BreadyChat />
         </>
       )}
     </div>

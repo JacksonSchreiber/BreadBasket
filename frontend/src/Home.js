@@ -63,18 +63,18 @@ function Home() {
             Compare prices across multiple stores and save money on your groceries with our smart shopping assistant
           </p>
           {loggedIn ? (
-            <form onSubmit={handleZipCodeSubmit} className="zip-form">
-              <input
-                type="text"
-                value={zipCode}
-                onChange={(e) => setZipCode(e.target.value)}
-                placeholder="Enter your ZIP code"
-                className="zip-input"
-                pattern="[0-9]{5}"
-                title="Please enter a valid 5-digit ZIP code"
-                required
-              />
-              <button type="submit" className="cta-button" disabled={loading}>
+              <form onSubmit={handleZipCodeSubmit} className="zip-form">
+                <input
+                  type="text"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                  placeholder="Enter your ZIP code"
+                  className="zip-input"
+                  pattern="[0-9]{5}"
+                  title="Please enter a valid 5-digit ZIP code"
+                  required
+                />
+                <button type="submit" className="cta-button" disabled={loading}>
                 {loading ? (
                   <span className="loading-text">
                     <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -86,9 +86,9 @@ function Home() {
                 ) : (
                   'Compare All Prices'
                 )}
-              </button>
-              {error && <p className="error-message">{error}</p>}
-            </form>
+                </button>
+                {error && <p className="error-message">{error}</p>}
+              </form>
           ) : (
             <Link to="/login" className="cta-button">
               Get Started

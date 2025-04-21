@@ -331,7 +331,7 @@
   .floating-card {
     width: 160px;
     padding: 1.25rem;
-  }
+}
 
   /* Adjust positions for medium screens */
   .card-1 { left: 2%; }
@@ -351,7 +351,7 @@
     text-align: center;
     padding: 3rem 1.5rem;
   }
-  
+
   .hero-title {
     font-size: 3rem;
   }
@@ -374,7 +374,7 @@
   .cta-content h2 {
     font-size: 2.5rem;
   }
-  
+
   .features {
     padding: 6rem 1.5rem;
   }
@@ -386,7 +386,7 @@
   .cta-content p {
     font-size: 1.2rem;
   }
-  
+
   .floating-card {
     width: 150px;
     padding: 1.25rem;
@@ -416,11 +416,11 @@
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.1rem;
   }
-  
+
   .zip-input {
     width: 100%;
   }

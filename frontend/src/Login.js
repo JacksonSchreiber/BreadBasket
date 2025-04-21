@@ -167,7 +167,7 @@ function Login({ onLoginSuccess }) {
             {message}
           </div>
         )}
-
+      
         <form onSubmit={isLoginView ? handleLoginSubmit : handleRegisterSubmit}>
           <div className="form-group">
             <label>Username</label>
@@ -224,7 +224,7 @@ function Login({ onLoginSuccess }) {
           <button type="submit" className="submit-button">
             {isLoginView ? 'Sign In' : 'Register'}
           </button>
-        </form>
+          </form>
 
         <p className="terms">
           By using BreadBasket, you agree to our{' '}
@@ -233,16 +233,16 @@ function Login({ onLoginSuccess }) {
         </p>
       </div>
 
-      <div className="google-login">
-        <p>Or login with Google:</p>
-        {isGoogleLoginEnabled ? (
-          <GoogleLogin
-            onSuccess={handleGoogleLogin}
-            onError={handleGoogleError}
-          />
-        ) : (
-          <div className="error-message">Google login temporarily unavailable</div>
-        )}
+          <div className="google-login">
+            <p>Or login with Google:</p>
+            {isGoogleLoginEnabled ? (
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={handleGoogleError}
+              />
+            ) : (
+              <div className="error-message">Google login temporarily unavailable</div>
+            )}
       </div>
     </div>
   );

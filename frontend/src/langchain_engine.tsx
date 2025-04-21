@@ -107,7 +107,7 @@ For shopping requests:
         { name: 'Olive oil', quantity: 1 },
         { name: 'Italian seasoning', quantity: 1 }
       );
-    }
+      }
     
     return ingredients;
   }
