@@ -21,7 +21,6 @@ interface Message {
 export class ShoppingAgent {
   private openai: OpenAI;
   private conversationHistory: Message[];
-  private cart: StoredCartItem[];
   private readonly CART_STORAGE_KEY = 'cartItems_v2';
 
   constructor() {
@@ -29,7 +28,6 @@ export class ShoppingAgent {
       apiKey: process.env.REACT_APP_OPENAI_API_KEY,
       dangerouslyAllowBrowser: true
     });
-    this.cart = JSON.parse(localStorage.getItem(this.CART_STORAGE_KEY) || '[]');
     this.conversationHistory = [
       {
         role: 'system',
@@ -91,9 +89,6 @@ For shopping requests:
     // Update cart
     const updatedCart = [...existingCart, ...formattedItems];
     localStorage.setItem(this.CART_STORAGE_KEY, JSON.stringify(updatedCart));
-    
-    // Update local cart reference
-    this.cart = updatedCart;
     
     return `Added to your cart: ${items.map(item => `${item.quantity}x ${item.name}`).join(', ')} 🛒`;
   }
