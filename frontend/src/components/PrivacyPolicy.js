@@ -1,105 +1,147 @@
 import React from 'react';
-import './Legal.css';
+import './PrivacyPolicy.css';
 
-function PrivacyPolicy() {
+const PrivacyPolicy = () => {
   return (
-    <div className="legal-container">
-      <div className="legal-content">
-        <h1>Privacy Policy</h1>
-        <p className="last-updated">Last Updated: March 19, 2024</p>
+    <div className="privacy-container">
+      <div className="privacy-content">
+        <div className="privacy-header">
+          <h1>Privacy Policy</h1>
+          <p className="last-updated">Last Updated: April 22, 2025</p>
+        </div>
 
-        <section>
-          <h2>1. Introduction</h2>
-          <p>BreadBasket ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.</p>
-        </section>
+        <div className="privacy-intro">
+          <p>This Privacy Policy describes how BreadBasket ("we", "us", or "our") collects, uses, shares, and protects your personal information when you use our application, website, services, and other products (collectively, the "Service").</p>
+          <p>By accessing or using BreadBasket, you agree to this Privacy Policy and consent to the practices described herein. If you do not agree with this policy, please do not use our services.</p>
+        </div>
 
-        <section>
-          <h2>2. Information We Collect</h2>
-          <h3>2.1 Personal Information</h3>
-          <p>We collect information that you provide directly to us, including:</p>
+        <div className="privacy-section">
+          <h2>1. Information We Collect</h2>
+          <h3>1.1 Information You Provide to Us</h3>
           <ul>
-            <li>Name and contact information</li>
-            <li>Account credentials</li>
-            <li>Location data (with your permission)</li>
-            <li>Shopping preferences and history</li>
-            <li>Communication preferences</li>
+            <li><strong>Account Information:</strong> When you create an account, we collect your email address, username, and password.</li>
+            <li><strong>Profile Information:</strong> You may optionally provide demographic information such as age, gender, or ZIP code.</li>
+            <li><strong>Communications:</strong> If you contact us directly (e.g., via email or chat), we may keep a record of your message, name, and contact information.</li>
           </ul>
 
-          <h3>2.2 Automatically Collected Information</h3>
-          <p>When you use our Service, we automatically collect:</p>
+          <h3>1.2 Information We Collect Automatically</h3>
           <ul>
-            <li>Device information</li>
-            <li>Usage data</li>
-            <li>Location data (if enabled)</li>
-            <li>Cookies and similar tracking technologies</li>
+            <li><strong>Device Information:</strong> Includes hardware model, operating system version, unique device identifiers, IP address, and mobile network.</li>
+            <li><strong>Usage Information:</strong> Includes your activity on the app such as page views, search queries, items viewed, and app interaction events.</li>
+            <li><strong>Cookies and Similar Technologies:</strong> We use cookies and related technologies for analytics, performance tracking, and user preferences.</li>
           </ul>
-        </section>
 
-        <section>
-          <h2>3. How We Use Your Information</h2>
-          <p>We use the collected information for:</p>
+          <h3>1.3 Information from Third Parties</h3>
           <ul>
-            <li>Providing and improving our services</li>
-            <li>Personalizing your shopping experience</li>
-            <li>Processing your transactions</li>
-            <li>Communicating with you about our services</li>
-            <li>Analyzing usage patterns and trends</li>
-            <li>Protecting against fraudulent or unauthorized activity</li>
+            <li><strong>APIs and Integrations:</strong> When using third-party APIs (e.g., grocery store data), we may receive product, price, and location data relevant to your requests.</li>
+            <li><strong>Authentication Services:</strong> If you sign in using Google, Apple, or Facebook, we receive basic profile information as permitted by their APIs.</li>
           </ul>
-        </section>
+        </div>
 
-        <section>
-          <h2>4. Information Sharing</h2>
-          <p>We may share your information with:</p>
+        <div className="privacy-section">
+          <h2>2. How We Use Your Information</h2>
+          <p>We use the information we collect for the following purposes:</p>
           <ul>
-            <li>Service providers and partners</li>
-            <li>Affiliated stores and retailers</li>
-            <li>Legal authorities when required by law</li>
-            <li>Other parties with your consent</li>
+            <li>To provide, operate, and maintain BreadBasket and its features.</li>
+            <li>To personalize your experience based on location, preferences, or saved searches.</li>
+            <li>To analyze usage trends and optimize app performance.</li>
+            <li>To communicate with you, including sending service updates or promotional materials (with consent).</li>
+            <li>To enforce our Terms of Service and prevent misuse or fraud.</li>
+            <li>To comply with legal obligations and regulatory requirements.</li>
           </ul>
-        </section>
+        </div>
 
-        <section>
-          <h2>5. Data Security</h2>
-          <p>We implement appropriate technical and organizational measures to protect your personal information, including:</p>
+        <div className="privacy-section">
+          <h2>3. How We Share Your Information</h2>
+          <p>We do not sell your personal data. We may share information in the following cases:</p>
+
+          <h3>3.1 With Service Providers</h3>
+          <p>We may share your information with trusted third-party vendors to perform services on our behalf, such as hosting, data analytics, or customer support.</p>
+
+          <h3>3.2 With Third-Party Retailers</h3>
+          <p>When you request product data, we may interact with external retailer APIs. Your ZIP code or selected items may be transmitted to generate relevant results, but personally identifiable data is not shared.</p>
+
+          <h3>3.3 Business Transfers</h3>
+          <p>If BreadBasket is involved in a merger, acquisition, financing, or sale of assets, your information may be transferred as part of that transaction.</p>
+
+          <h3>3.4 Legal Requirements</h3>
+          <p>We may disclose your information where required by law, regulation, or subpoena, or if we believe disclosure is necessary to protect the rights, property, or safety of BreadBasket, users, or the public.</p>
+        </div>
+
+        <div className="privacy-section">
+          <h2>4. Your Privacy Rights</h2>
+          <p>Depending on your jurisdiction, you may have the following rights:</p>
+
+          <h3>4.1 Access and Portability</h3>
+          <p>You may request a copy of your data in a machine-readable format.</p>
+
+          <h3>4.2 Correction and Deletion</h3>
+          <p>You may update your account information or request deletion of your data by contacting us.</p>
+
+          <h3>4.3 Opt-Out</h3>
+          <p>You may opt out of marketing communications at any time by clicking the "unsubscribe" link in any promotional email or contacting us directly.</p>
+
+          <h3>4.4 California Privacy Rights (CCPA)</h3>
+          <p>If you are a California resident, you may request:</p>
           <ul>
-            <li>Encryption of sensitive data</li>
-            <li>Regular security assessments</li>
-            <li>Access controls and authentication</li>
-            <li>Secure data storage and transmission</li>
+            <li>Disclosure of the categories and specific pieces of personal information we have collected about you.</li>
+            <li>Deletion of your personal information.</li>
+            <li>Information about how your data is used and shared.</li>
           </ul>
-        </section>
 
-        <section>
-          <h2>6. Your Rights and Choices</h2>
-          <p>You have the right to:</p>
+          <h3>4.5 EU/EEA Users (GDPR)</h3>
+          <p>If you are located in the European Economic Area, you have additional rights under the General Data Protection Regulation (GDPR), including:</p>
           <ul>
-            <li>Access your personal information</li>
-            <li>Correct inaccurate data</li>
-            <li>Request deletion of your data</li>
-            <li>Opt-out of marketing communications</li>
-            <li>Control location tracking and cookies</li>
+            <li>Right to restrict processing</li>
+            <li>Right to object to automated processing</li>
+            <li>Right to lodge a complaint with a data protection authority</li>
           </ul>
-        </section>
+        </div>
 
-        <section>
+        <div className="privacy-section">
+          <h2>5. Data Retention</h2>
+          <p>We retain your personal data only as long as necessary to fulfill the purposes outlined in this Privacy Policy. Account and usage data may be retained for legal, security, or operational reasons. Upon request or account deletion, we will securely erase or anonymize your data unless we are required to retain it by law.</p>
+        </div>
+
+        <div className="privacy-section">
+          <h2>6. Data Security</h2>
+          <p>We implement a range of security measures to protect your data:</p>
+          <ul>
+            <li>Encrypted connections via HTTPS</li>
+            <li>Password hashing using industry standards</li>
+            <li>Regular vulnerability assessments and access audits</li>
+          </ul>
+          <p>However, no method of transmission or storage is completely secure. Use the service at your own risk.</p>
+        </div>
+
+        <div className="privacy-section">
           <h2>7. Children's Privacy</h2>
-          <p>Our Service is not intended for children under 13 years of age. We do not knowingly collect or maintain information from children under 13.</p>
-        </section>
+          <p>BreadBasket does not knowingly collect personal information from children under the age of 13. If we learn that a child has provided us with personal data, we will delete such information as quickly as possible.</p>
+        </div>
 
-        <section>
-          <h2>8. Changes to This Policy</h2>
-          <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date.</p>
-        </section>
+        <div className="privacy-section">
+          <h2>8. International Users</h2>
+          <p>BreadBasket is operated in the United States. If you access the Service from outside the U.S., you consent to the transfer of your information to the U.S. and its processing under this Privacy Policy.</p>
+        </div>
 
-        <section>
-          <h2>9. Contact Us</h2>
-          <p>If you have any questions about this Privacy Policy, please contact us at:</p>
-          <p className="contact-info">privacy@breadbasket.com</p>
-        </section>
+        <div className="privacy-section">
+          <h2>9. Changes to This Policy</h2>
+          <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. The latest version will always be available on our website and include the "Last Updated" date.</p>
+          <p>If material changes are made, we will notify you by email or in-app notification.</p>
+        </div>
+
+        <div className="privacy-section">
+          <h2>10. Contact Us</h2>
+          <p>If you have any questions, concerns, or requests regarding this Privacy Policy, please contact us at:</p>
+          <p>
+            📧 Email: privacy@breadbasketapp.com<br />
+            📍 Address: BreadBasket Legal, 123 Startup Lane, Gainesville, FL 32601<br />
+            📂 GitHub Repository: BreadBasket on GitHub
+          </p>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default PrivacyPolicy; 

@@ -10,9 +10,8 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
 function Login({ onLoginSuccess }) {
   const [isLoginView, setIsLoginView] = useState(true);
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
     email: '',
+    password: '',
     confirmPassword: ''
   });
   const [message, setMessage] = useState('');
@@ -36,7 +35,7 @@ function Login({ onLoginSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.username,
+          username: formData.email, // Using email as username for login
           password: formData.password
         })
       });
@@ -45,9 +44,9 @@ function Login({ onLoginSuccess }) {
       
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', formData.username);
+        localStorage.setItem('user', formData.email);
         localStorage.setItem('role', data.role);
-        onLoginSuccess(data.token, data.role, formData.username);
+        onLoginSuccess(data.token, data.role, formData.email);
         navigate('/');
       } else {
         setMessage(data.message || 'Login failed. Please try again.');
@@ -72,7 +71,7 @@ function Login({ onLoginSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.username,
+          username: formData.email,
           email: formData.email,
           password: formData.password
         })
@@ -81,13 +80,34 @@ function Login({ onLoginSuccess }) {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Registration successful! Please log in.');
-        setIsLoginView(true);
-        setFormData(prev => ({
-          ...prev,
-          password: '',
-          confirmPassword: ''
-        }));
+        // After successful registration, automatically log in
+        const loginResponse = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: formData.email,
+            password: formData.password
+          })
+        });
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok) {
+          localStorage.setItem('token', loginData.token);
+          localStorage.setItem('user', formData.email);
+          localStorage.setItem('role', loginData.role);
+          onLoginSuccess(loginData.token, loginData.role, formData.email);
+          setMessage('Registration successful! Logging you in...');
+          navigate('/');
+        } else {
+          setMessage('Registration successful! Please log in.');
+          setIsLoginView(true);
+          setFormData(prev => ({
+            ...prev,
+            password: '',
+            confirmPassword: ''
+          }));
+        }
       } else {
         setMessage(data.message || 'Registration failed. Please try again.');
       }
@@ -173,8 +193,8 @@ function Login({ onLoginSuccess }) {
             <label>Email</label>
             <input
               type="email"
-              name={isLoginView ? "username" : "email"}
-              value={isLoginView ? formData.username : formData.email}
+              name="email"
+              value={formData.email}
               onChange={handleInputChange}
               placeholder="Enter your email"
               required
@@ -219,16 +239,16 @@ function Login({ onLoginSuccess }) {
         </p>
       </div>
 
-          <div className="google-login">
-            <p>Or login with Google:</p>
-            {isGoogleLoginEnabled ? (
-              <GoogleLogin
-                onSuccess={handleGoogleLogin}
-                onError={handleGoogleError}
-              />
-            ) : (
-              <div className="error-message">Google login temporarily unavailable</div>
-            )}
+      <div className="google-login">
+        <p>Or login with Google:</p>
+        {isGoogleLoginEnabled ? (
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={handleGoogleError}
+          />
+        ) : (
+          <div className="error-message">Google login temporarily unavailable</div>
+        )}
       </div>
     </div>
   );
