@@ -170,30 +170,16 @@ function Login({ onLoginSuccess }) {
       
         <form onSubmit={isLoginView ? handleLoginSubmit : handleRegisterSubmit}>
           <div className="form-group">
-            <label>Username</label>
+            <label>Email</label>
             <input
-              type="text"
-              name="username"
-              value={formData.username}
+              type="email"
+              name={isLoginView ? "username" : "email"}
+              value={isLoginView ? formData.username : formData.email}
               onChange={handleInputChange}
-              placeholder="Enter your username"
+              placeholder="Enter your email"
               required
             />
           </div>
-
-          {!isLoginView && (
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-          )}
 
           <div className="form-group">
             <label>Password</label>
@@ -224,7 +210,7 @@ function Login({ onLoginSuccess }) {
           <button type="submit" className="submit-button">
             {isLoginView ? 'Sign In' : 'Register'}
           </button>
-          </form>
+        </form>
 
         <p className="terms">
           By using BreadBasket, you agree to our{' '}

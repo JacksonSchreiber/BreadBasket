@@ -11,6 +11,9 @@ function Admin() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('submissions');
   const [filter, setFilter] = useState('all');
+  const [savingNotes, setSavingNotes] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [unsavedNotes, setUnsavedNotes] = useState({});  // Track unsaved changes for each submission
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -123,6 +126,7 @@ function Admin() {
   };
 
   const handleUpdateNotes = async (submissionId, notes) => {
+    setSavingNotes(submissionId);
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
@@ -147,8 +151,22 @@ function Admin() {
           ? { ...submission, admin_notes: notes }
           : submission
       ));
+
+      // Clear unsaved changes for this submission
+      setUnsavedNotes(prev => {
+        const updated = { ...prev };
+        delete updated[submissionId];
+        return updated;
+      });
+
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 2300);
+
     } catch (err) {
       setError('Failed to update notes');
+    } finally {
+      setSavingNotes(null);
     }
   };
 
@@ -229,6 +247,11 @@ function Admin() {
 
   return (
     <div className="admin-container">
+      {showSuccessMessage && (
+        <div className="save-success-message">
+          Notes saved successfully!
+        </div>
+      )}
       <div className="admin-tabs">
         <button
           className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
@@ -259,8 +282,23 @@ function Admin() {
           </div>
 
           <div className="submissions-list">
-            {submissions.length === 0 ? (
-              <div className="no-submissions">No submissions found.</div>
+            {loading ? (
+              <div className="admin-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading submissions...</p>
+              </div>
+            ) : error ? (
+              <div className="admin-error">
+                <h2>Error</h2>
+                <p>{error}</p>
+                <button className="retry-button" onClick={fetchData}>
+                  Retry
+                </button>
+              </div>
+            ) : submissions.length === 0 ? (
+              <div className="no-submissions">
+                No submissions found
+              </div>
             ) : (
               submissions.map((submission) => (
                 <div
@@ -292,20 +330,41 @@ function Admin() {
                       placeholder="Add notes about this submission..."
                       value={submission.admin_notes || ''}
                       onChange={(e) => {
+                        const newValue = e.target.value;
                         setSubmissions(submissions.map(s =>
                           s.id === submission.id
-                            ? { ...s, admin_notes: e.target.value }
+                            ? { ...s, admin_notes: newValue }
                             : s
                         ));
+                        // Mark this submission as having unsaved changes
+                        setUnsavedNotes(prev => ({
+                          ...prev,
+                          [submission.id]: true
+                        }));
                       }}
                       className="notes-textarea"
                     />
-                    <button
-                      className="save-notes-button"
-                      onClick={() => handleUpdateNotes(submission.id, submission.admin_notes)}
-                    >
-                      Save Notes
-                    </button>
+                    {unsavedNotes[submission.id] && (
+                      <button
+                        className={`save-notes-button ${savingNotes === submission.id ? 'saving' : ''}`}
+                        onClick={() => handleUpdateNotes(submission.id, submission.admin_notes)}
+                        disabled={savingNotes === submission.id}
+                      >
+                        <div className="button-content">
+                          {savingNotes === submission.id ? (
+                            <>
+                              <span className="spinner" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Save Notes</span>
+                              <span className="success-icon">✓</span>
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

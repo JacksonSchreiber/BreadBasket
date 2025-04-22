@@ -13,6 +13,7 @@ import BreadyChat from './components/BreadyChat';
 import PrivateRoute from './PrivateRoute';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import Footer from './components/Footer';
 import './App.css';
 
 function AppContent() {
@@ -105,12 +106,14 @@ function AppContent() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('role');
     localStorage.removeItem('user');
+    localStorage.removeItem('role');
     setIsAuthenticated(false);
     setUserRole(null);
     setLoggedInUser(null);
     setDropdownOpen(false);
+    // Refresh the page and redirect to homepage
+    window.location.href = '/';
   };
 
   const isActiveRoute = (path) => {
@@ -265,6 +268,7 @@ function AppContent() {
       <BreadyChat />
         </>
       )}
+      <Footer />
     </div>
   );
 }

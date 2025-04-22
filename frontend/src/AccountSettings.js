@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AccountSettings.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+
 function AccountSettings() {
   const navigate = useNavigate();
   const [user, setUser] = useState({
     email: localStorage.getItem('user') || '',
-    username: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -26,11 +27,19 @@ function AccountSettings() {
           return;
         }
 
-        const response = await fetch('http://127.0.0.1:5002/user/profile', {
+        const response = await fetch(`${API_URL}/user/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
+
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+          return;
+        }
 
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
@@ -39,7 +48,7 @@ function AccountSettings() {
         const data = await response.json();
         setUser(prev => ({
           ...prev,
-          username: data.username || '',
+          email: data.email || prev.email,
           notifications: data.notifications ?? true,
           emailUpdates: data.emailUpdates ?? true
         }));
@@ -86,20 +95,26 @@ function AccountSettings() {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:5002/user/update', {
+      const response = await fetch(`${API_URL}/user/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          username: user.username,
           currentPassword: user.currentPassword,
           newPassword: user.newPassword,
           notifications: user.notifications,
           emailUpdates: user.emailUpdates
         })
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
 
       const data = await response.json();
 
@@ -146,16 +161,6 @@ function AccountSettings() {
                 className="disabled-input"
               />
               <small>Email cannot be changed</small>
-            </div>
-            <div className="form-group">
-              <label>Username</label>
-              <input
-                type="text"
-                name="username"
-                value={user.username}
-                onChange={handleChange}
-                placeholder="Enter your username"
-              />
             </div>
           </div>
 
