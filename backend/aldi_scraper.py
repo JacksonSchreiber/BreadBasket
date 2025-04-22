@@ -19,24 +19,58 @@ CACHE_DURATION = 300  # 5 minutes
 
 # Common grocery items with realistic price ranges (fallback)
 PRICE_RANGES = {
-    "milk": (2.89, 4.29),
-    "eggs": (2.19, 3.99),
-    "cheese": (3.49, 5.99),
-    "yogurt": (0.99, 3.49),
-    "butter": (3.29, 4.99),
-    "bread": (1.99, 3.99),
-    "chicken breast": (3.99, 6.99),
-    "beef": (5.99, 9.99),
-    "apples": (1.29, 2.99),
-    "bananas": (0.49, 0.79),
-    "potatoes": (2.99, 4.99),
-    "rice": (1.99, 4.99),
-    "pasta": (0.99, 2.49),
-    "cereal": (2.99, 4.99)
+    "milk": (2.69, 3.19),
+    "whole milk": (2.79, 3.29),
+    "skim milk": (2.69, 3.19),
+    "almond milk": (2.99, 3.79),
+    "eggs": (1.99, 3.29),
+    "brown eggs": (2.79, 3.99),
+    "cheese": (2.99, 4.99),
+    "cheddar cheese": (3.49, 4.29),
+    "mozzarella cheese": (2.99, 3.99),
+    "yogurt": (0.79, 2.29),
+    "greek yogurt": (3.99, 4.99),
+    "butter": (2.99, 3.69),
+    "bread": (1.29, 2.99),
+    "white bread": (1.29, 1.99),
+    "wheat bread": (1.79, 2.99),
+    "chicken breast": (2.99, 5.49),
+    "whole chicken": (5.99, 7.99),
+    "beef": (4.99, 8.99),
+    "ground beef": (3.99, 5.99),
+    "beef steak": (6.99, 12.99),
+    "apples": (0.99, 2.49),
+    "gala apples": (1.29, 2.29),
+    "red delicious apples": (1.19, 2.19),
+    "bananas": (0.39, 0.59),
+    "potatoes": (2.49, 4.29),
+    "sweet potatoes": (0.99, 1.79),
+    "russet potatoes": (2.79, 4.29),
+    "rice": (1.79, 3.99),
+    "white rice": (1.79, 3.49),
+    "brown rice": (2.29, 3.99),
+    "pasta": (0.79, 1.99),
+    "spaghetti": (0.79, 1.69),
+    "penne pasta": (0.89, 1.79),
+    "cereal": (1.99, 3.99),
+    "cheerios": (2.99, 3.79),
+    "corn flakes": (1.99, 2.79),
+    "coffee": (4.99, 8.99),
+    "tea": (1.99, 3.99),
+    "sugar": (1.99, 2.99),
+    "flour": (1.99, 3.79),
+    "orange juice": (2.99, 3.99),
+    "apple juice": (2.49, 3.49),
+    "tomatoes": (1.79, 3.29),
+    "lettuce": (1.49, 2.49),
+    "onions": (1.49, 2.39),
+    "carrots": (0.99, 1.99),
+    "broccoli": (1.99, 2.99),
+    "ice cream": (2.99, 4.99)
 }
 
 # Default price range for items not in the above list
-DEFAULT_PRICE_RANGE = (1.79, 5.99)
+DEFAULT_PRICE_RANGE = (1.79, 4.99)
 
 def generate_consistent_price(item, store_id="aldi"):
     """Generate a consistent price for an item based on its name and store"""
@@ -174,14 +208,23 @@ def get_aldi_prices():
     try:
         # Get price for the item
         result = get_aldi_price(item, zip_code)
+        
+        # Check if the API returned an error or empty result
+        if result == "error" or not result or 'price' not in result:
+            # Use fallback price
+            fallback_price = generate_consistent_price(item)
+            result = {
+                "title": item.title(),
+                "price": str(fallback_price)
+            }
+        
         logger.info(f"Retrieved price for {item}: ${result['price']}")
         
         # Return the result
         return jsonify({"product_data": result}), 200
     except Exception as e:
         logger.error(f"Error getting price: {str(e)}")
-        return "error", 500
-        """
+        
         # Always return a result, even if there's an error
         fallback_price = generate_consistent_price(item)
         return jsonify({
@@ -190,7 +233,6 @@ def get_aldi_prices():
                 "price": str(fallback_price)
             }
         }), 200
-        """
 
 def clear_cache():
     """Clear expired cache entries"""

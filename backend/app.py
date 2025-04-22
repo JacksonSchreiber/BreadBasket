@@ -646,9 +646,9 @@ def get_recipe(dish, ingredients=None):
 def compare_prices(items):
     # This is a mock implementation - replace with actual price database
     prices = {
-        "milk": {"Walmart": 2.99, "Target": 3.29, "Kroger": 3.19},
-        "bread": {"Walmart": 1.99, "Target": 2.29, "Kroger": 2.19},
-        "eggs": {"Walmart": 2.49, "Target": 2.79, "Kroger": 2.69}
+        "milk": {"Walmart": 2.99, "Target": 3.29, "Kroger": 3.19, "Publix": 3.49},
+        "bread": {"Walmart": 1.99, "Target": 2.29, "Kroger": 2.19, "Publix": 2.69},
+        "eggs": {"Walmart": 2.49, "Target": 2.79, "Kroger": 2.69, "Publix": 2.99}
     }
     
     results = {}

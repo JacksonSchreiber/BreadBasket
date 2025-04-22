@@ -1,18 +1,13 @@
 {
-  "dependencies": {
-    "@chakra-ui/icons": "^2.2.4",
-    "@chakra-ui/react": "^2.8.2",
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@react-oauth/google": "^0.12.1",
-    "framer-motion": "^10.18.0",
-    "openai": "^4.95.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+  "name": "breadbasket",
+  "version": "1.0.0",
+  "description": "BreadBasket Shopping Application",
+  "scripts": {
+    "backend": "concurrently \"cd backend && python app.py\" \"cd backend && python publix_scraper.py\" \"cd backend && python aldi_scraper.py\" \"cd backend && python kroger.py\"",
+    "frontend": "cd frontend && npm start",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.2"
+    "concurrently": "^8.2.2"
   }
 }

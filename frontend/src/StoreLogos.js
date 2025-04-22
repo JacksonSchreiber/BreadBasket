@@ -27,6 +27,20 @@ function StoreLogos() {
               className="store-logo"
             />
           </div>
+          <div className="store-logo-item">
+            <img 
+              src="/images/Walmart_logo.png" 
+              alt="Walmart" 
+              className="store-logo"
+            />
+          </div>
+          <div className="store-logo-item">
+            <img 
+              src="/images/WholeFoods_logo.png" 
+              alt="Whole Foods" 
+              className="store-logo"
+            />
+          </div>
         </div>
       </div>
     </section>
