@@ -311,6 +311,7 @@ function Results() {
       result[category] = data
         .filter(item => categories[category].includes(item.item))
         .filter(item => 
+          filterQuery === '' || 
           item.item.toLowerCase().includes(filterQuery.toLowerCase()) ||
           Object.entries(item.prices).some(([store, price]) => 
             store.toLowerCase().includes(filterQuery.toLowerCase()) ||
@@ -435,7 +436,7 @@ function Results() {
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <option value="All">Categories</option>
+            <option value="All">All Categories</option>
             {Object.keys(categories).map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -450,7 +451,9 @@ function Results() {
         </div>
       </div>
       
-      {Object.keys(categories).map((category) => {
+      {Object.keys(categories)
+        .filter(category => selectedCategory === 'All' || category === selectedCategory)
+        .map((category) => {
         if (!filteredData[category] || filteredData[category].length === 0) {
           return null;
         }
